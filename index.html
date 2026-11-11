@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Шахта Знаний — игра</title>
 <style>
   :root{
@@ -367,6 +367,27 @@
     .dpad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(2,40px)}
     #controls{gap:6px}
   }
+  /* Подключение к комнате в существующей цветовой схеме. */
+  .room-join{display:flex;gap:8px;margin:14px 0 0;flex-wrap:wrap;justify-content:center}
+  .room-join input{font:inherit;min-width:0;width:130px;min-height:44px;text-align:center;text-transform:uppercase;color:var(--text);background:#0a0908;border:1px solid var(--edge);border-radius:9px;padding:8px}
+  .room-join .btn{padding:10px 14px;font-size:13px;min-height:44px}
+  #netBar{flex:none;display:flex;align-items:center;gap:8px;line-height:1.4;padding:5px 9px;background:var(--panel);border:1px solid var(--edge);border-radius:9px;font-size:12px}
+  #netBar[hidden],#netCover[hidden]{display:none}
+  #netStatus{flex:1;min-width:0;overflow-wrap:anywhere;color:var(--amber-2)}
+  #netLeave{min-height:36px;padding:7px 10px;font-size:12px}
+  #netCover{position:absolute;inset:0;z-index:10;background:rgba(8,7,6,.94);display:flex;flex-direction:column;gap:18px;align-items:center;justify-content:center;text-align:center;line-height:1.5;padding:20px;color:var(--amber-2)}
+  #netError{color:#ffb1a8;font-size:13px;line-height:1.4;margin:8px 0 0;overflow-wrap:anywhere}
+  .screen{align-items:safe center;overflow-y:auto}
+  @media(max-width:640px){
+    body{padding:max(6px,env(safe-area-inset-top)) max(6px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left))}
+    .screen{padding:8px}.card{padding:14px 12px}.sub{font-size:12px;margin-bottom:10px}
+    .rules{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:10px}.rules div{padding:6px}.skins{margin-bottom:10px}
+    .skin-desc{font-size:12px;margin-bottom:10px;padding:8px}.skin-desc .say{margin-top:4px}
+    #qScreen .card{max-height:100%;overflow-y:auto}#qText{font-size:17px;margin-bottom:12px}.ans{min-height:44px;padding:10px;font-size:14px}
+    .qclose{min-width:44px;height:44px}.qtop{flex-wrap:wrap}.qright{margin-left:auto}.qprog{flex-wrap:wrap}
+    .qnext{position:sticky;bottom:0;min-height:44px}.btn{min-height:44px}.citygrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .qsource{margin:0 0 8px}.room-join{margin-top:10px}#toast{max-width:calc(100% - 16px);white-space:normal;text-align:center}
+  }
 </style>
 </head>
 <body>
@@ -401,6 +422,11 @@
         <div class="skin-desc" id="skinDesc"></div>
         <div class="qsource" id="qSource">вопросы загружаются…</div>
         <button class="btn" id="startBtn">Спуститься в шахту</button>
+        <form class="room-join" id="roomJoin">
+          <input id="roomCode" aria-label="Код комнаты" placeholder="Код комнаты" maxlength="5" autocomplete="off" autocapitalize="characters" required pattern="[A-Za-z2-9]{5}">
+          <button class="btn ghost" type="submit">Войти к друзьям</button>
+        </form>
+        <p id="netError" role="alert"></p>
       </div>
     </div>
 
@@ -464,9 +490,11 @@
       </div>
     </div>
 
+    <div id="netCover" hidden><span id="netCoverText">Подключаемся к серверу…</span><button id="netCancel" class="btn ghost" type="button">В главное меню</button></div>
     <div id="toast"></div>
   </div>
 
+  <div id="netBar" hidden><span id="netStatus" role="status" aria-live="polite"></span><button id="netLeave" class="btn ghost" type="button">Выйти</button></div>
   <div id="controls">
     <div class="hint">
       <b>Тапните по любой клетке</b> — шахтёр сам дойдёт.
@@ -481,6 +509,7 @@
   </div>
 </div>
 
+<script src="/network.js"></script>
 <script>
 (function(){
   'use strict';
@@ -675,6 +704,8 @@
   let autoPath = [], autoNext = 0, tapTarget = null;
   let pickups = [], hintUsed = false;
   let speech = null;
+  let netActive = false, netReady = false, netRendering = false, netLevel = 0, netPeers = [];
+  let netQuestionId = null, netQuestionAnswered = false, netSeq = 0, netMovePending = 0, netSubmitting = false;
   let best = 0;
   try { best = Number(localStorage.getItem('mine_best')) || 0; } catch (e) { best = 0; }
 
@@ -957,9 +988,10 @@
     return QUESTIONS[decks[key].pop()];
   }
 
-  function openQuestion(crystal){
+  function openQuestion(crystal, serverQuestion){
+    if (netActive && !netRendering){ netSend('question'); return; }
     const hard = !!(crystal && crystal.hard);
-    const q = nextQuestion(hard);
+    const q = serverQuestion || nextQuestion(hard);
     activeQuestion = q;
     activeCrystal = crystal;
     state = 'question';
@@ -1032,13 +1064,14 @@
       submit.addEventListener('click', submitSlider);
       box.appendChild(submit);
     } else {
-      const opts = shuffle(q.a.map((text, i) => ({ text, ok: i === q.c })));
+      const opts = shuffle(q.a.map((text, i) => ({ text, ok: i === q.c, index: i })));
       opts.forEach(o => {
         const b = document.createElement('button');
         b.className = 'ans';
         b.type = 'button';
         b.textContent = o.text;
         b.dataset.ok = o.ok ? '1' : '0';
+        b.dataset.option = String(o.index);
         b.addEventListener('click', () => answer(b, o.ok));
         box.appendChild(b);
       });
@@ -1062,6 +1095,7 @@
   }
 
   el('hintBtn').addEventListener('click', () => {
+    if (netActive){ netSend('hint', { questionId: netQuestionId }); return; }
     if (state !== 'question' || hintUsed) return;
     if (fuel <= 10){
       el('qFoot').textContent = 'Мало света для подсказки.';
@@ -1087,6 +1121,7 @@
   }
 
   function answer(btn, ok){
+    if (netActive && !netRendering){ netAnswer(Number(btn.dataset.option)); return; }
     if (answerLock) return;
     answerLock = true;
     lastAnswerOk = ok;
@@ -1162,6 +1197,7 @@
   }
 
   function submitSlider(){
+    if (netActive && !netRendering){ netAnswer(Number(el('sliderInput')?.value)); return; }
     if (answerLock) return;
     const q = activeQuestion;
     if (!q || q.type !== 'slider') return;
@@ -1243,6 +1279,7 @@
   }
 
   el('qNextBtn').addEventListener('click', () => {
+    if (netActive){ netSend('next'); return; }
     if (state !== 'question') return;
     const wasOk = lastAnswerOk;
     const crystal = activeCrystal;
@@ -1282,6 +1319,7 @@
     sfx.pick();
   });
   el('qExitConfirmBtn').addEventListener('click', () => {
+    if (netActive){ netSend('cancel'); return; }
     if (state !== 'question' || answerLock) return;
     score = Math.max(0, score - EXIT_QUESTION_PENALTY);
     updateHUD();
@@ -1374,6 +1412,7 @@
   canvas.addEventListener('contextmenu', e => e.preventDefault());
 
   function tryMove(dx, dy){
+    if (netActive && (!netReady || netMovePending)) return;
     if (state !== 'playing') return;
     if (dx !== 0) player.dir = dx > 0 ? 1 : -1;
 
@@ -1386,6 +1425,7 @@
     }
     player.gx = nx; player.gy = ny;
     sfx.step();
+    if (netActive){ netMovePending = ++netSeq; netSend('move', { dx, dy, seq: netSeq }); return; }
     onEnterTile();
   }
 
@@ -1444,7 +1484,7 @@
     state = 'dead';
     stopAuto();
     const bonus = Math.round(startKm * 15);
-    score += bonus;
+    if (!netActive) score += bonus;
     if (score > best){
       best = score;
       try { localStorage.setItem('mine_best', String(best)); } catch (e) {}
@@ -1560,6 +1600,7 @@
   }
 
   function openCitySelect(){
+    leaveNetwork();
     state = 'title';
     stopAuto();
     speech = null;
@@ -1571,6 +1612,7 @@
   }
 
   function startGame(city){
+    if (!netRendering){ beginNetwork({ type: 'create', city: CITIES.indexOf(city), skin: skinIndex }); return; }
     chosenCity = city;
     startKm = city.km;
     completedMines = 0;
@@ -1588,6 +1630,116 @@
     state = 'playing';
     updateHUD();
     toast(city.name + ' → Соты: ' + city.km + ' км · ' + totalMines + ' ' + plural(totalMines, 'шахта', 'шахты', 'шахт'));
+  }
+
+  /* Сервер проверяет игровые действия; браузер сохраняет исходную отрисовку. */
+  const connection = new window.SotaConnection(message => {
+    if (message.type === 'error') { netSubmitting = false; toast(message.message); return; }
+    if (message.type !== 'state' || !netActive) return;
+    const me = message.me, world = message.world;
+    const changedLevel = netLevel !== message.level;
+    if (changedLevel){
+      map = world.map; seen = Array.from({ length: H }, () => Array(W).fill(0));
+      bright = Array.from({ length: H }, () => Array(W).fill(0));
+      netLevel = message.level; stopAuto(); particles = []; netQuestionId = null; netMovePending = 0;
+      player.x = me.x * TILE + TILE / 2; player.y = me.y * TILE + TILE / 2;
+    }
+    netSeq = Math.max(netSeq, me.ack);
+    if (!netMovePending || me.ack >= netMovePending){ player.gx = me.x; player.gy = me.y; player.dir = me.dir; netMovePending = 0; }
+    crystals = world.crystals; pickups = world.pickups; needed = world.needed; exitCell = world.exitCell;
+    chosenCity = message.city; startKm = chosenCity.km; totalMines = message.totalMines; depth = message.level;
+    completedMines = message.finished ? totalMines : depth - 1;
+    collected = message.collected; exitOpen = collected >= needed; runOre = message.runOre;
+    netPeers = message.players.filter(p => p.id !== me.id && p.connected);
+    el('netBar').hidden = false;
+    el('netStatus').textContent = 'Комната ' + message.code + ' · Онлайн: ' + message.players.filter(p => p.connected).length + ' · ' + chosenCity.name;
+    el('netCover').hidden = true;
+    ['startScreen','cityScreen'].forEach(id => el(id).classList.add('hidden'));
+    const pending = me.pending;
+    if (pending){
+      activeCrystal = crystals[pending.index];
+      if (netQuestionId !== pending.id){
+        netQuestionId = pending.id; netQuestionAnswered = false; netSubmitting = false; stopAuto();
+        netRendering = true;
+        try { openQuestion(activeCrystal, pending.question); } finally { netRendering = false; }
+      }
+      state = 'question';
+      if (pending.answered && !netQuestionAnswered){
+        netQuestionAnswered = true; netSubmitting = false; activeQuestion = pending.question;
+        netRendering = true;
+        try {
+          if (activeQuestion.type === 'slider') { el('sliderInput').value = pending.result.value; submitSlider(); }
+          else {
+            document.querySelectorAll('#qAnswers button').forEach(b => { b.dataset.ok = Number(b.dataset.option) === activeQuestion.c ? '1' : '0'; });
+            const button = Array.from(document.querySelectorAll('#qAnswers button')).find(b => Number(b.dataset.option) === pending.result.value);
+            answer(button, pending.result.ok);
+          }
+        } finally { netRendering = false; }
+      }
+      if (pending.hint.length){
+        hintUsed = true; el('hintBtn').disabled = true; el('hintBtn').textContent = 'Подсказка использована';
+        document.querySelectorAll('#qAnswers button').forEach(b => { if (pending.hint.includes(Number(b.dataset.option))) b.classList.add('removed'); });
+      }
+    } else {
+      netQuestionId = null; netQuestionAnswered = false; netSubmitting = false; activeQuestion = null; activeCrystal = null; answerLock = false;
+      el('qScreen').classList.add('hidden'); el('qExitConfirm').classList.add('hidden');
+      if (me.state === 'playing'){ state = 'playing'; el('endScreen').classList.add('hidden'); }
+    }
+    score = me.score; fuel = me.fuel; hp = me.hp; answerStreak = me.streak;
+    if (pending?.answered) el('qNextBtn').textContent = pending.result.ok ? (collected >= needed ? 'К лестнице' : 'Дальше') : 'Попробовать снова';
+    updateHUD();
+    if ((me.state === 'dead' || me.state === 'won') && state !== 'dead') {
+      el('qScreen').classList.add('hidden');
+      if (me.state === 'won') victory(); else gameOver(me.reason);
+    }
+  }, (status, text) => {
+    netReady = status === 'connected';
+    if (status === 'connecting') {
+      stopAuto(); netMovePending = 0; el('netCover').hidden = false;
+      el('netCoverText').textContent = text || 'Подключаемся к серверу…';
+    } else if (status === 'error') {
+      leaveNetwork(); state = 'title'; el('startScreen').classList.remove('hidden');
+      ['cityScreen','qScreen','endScreen'].forEach(id => el(id).classList.add('hidden'));
+      el('netError').textContent = text || 'Не удалось подключиться';
+    }
+  });
+  function netSend(type, fields = {}) {
+    if (!netActive || !netReady) return false;
+    return connection.send({ type, level: netLevel, ...fields });
+  }
+  function netAnswer(value) {
+    if (netSubmitting || !netQuestionId || netQuestionAnswered || !Number.isFinite(value)) return;
+    netSubmitting = netSend('answer', { questionId: netQuestionId, value });
+  }
+  function beginNetwork(message) {
+    netActive = true; netReady = false; netLevel = 0; netQuestionId = null; netSeq = 0; netMovePending = 0;
+    el('netError').textContent = ''; connection.start(message);
+  }
+  function leaveNetwork() {
+    connection.stop(); netActive = false; netReady = false; netPeers = []; netLevel = 0; netMovePending = 0;
+    el('netCover').hidden = true; el('netBar').hidden = true; stopAuto();
+  }
+  function leaveToMenu() {
+    leaveNetwork(); state = 'title';
+    ['cityScreen','qScreen','endScreen'].forEach(id => el(id).classList.add('hidden'));
+    el('startScreen').classList.remove('hidden'); buildSkins();
+  }
+  el('netLeave').addEventListener('click', leaveToMenu); el('netCancel').addEventListener('click', leaveToMenu);
+  el('roomJoin').addEventListener('submit', event => {
+    event.preventDefault(); const code = el('roomCode').value.trim().toUpperCase();
+    if (!/^[A-Z2-9]{5}$/.test(code)){ el('netError').textContent = 'Введите код комнаты из пяти символов'; return; }
+    beginNetwork({ type: 'join', code, skin: skinIndex });
+  });
+  const invitedCode = new URLSearchParams(location.search).get('room');
+  if (invitedCode) el('roomCode').value = invitedCode.toUpperCase().slice(0, 5);
+  function drawNetworkPlayers(now) {
+    for (const peer of netPeers) {
+      if (peer.state === 'dead') continue;
+      ctx.save(); ctx.translate(peer.x * TILE + TILE / 2, peer.y * TILE + TILE / 2 - 2);
+      ctx.save(); ctx.scale(peer.dir, 1); drawSkinBody(ctx, SKINS[peer.skin] || SKINS[0], now); ctx.restore();
+      ctx.font = 'bold 11px "Segoe UI",sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = '#080706'; ctx.fillStyle = '#ffd08a';
+      ctx.strokeText(peer.name, 0, -30); ctx.fillText(peer.name, 0, -30); ctx.restore();
+    }
   }
 
   /* ============================================================
@@ -2286,6 +2438,7 @@
     drawExit(now);
     for (const c of crystals) if (!c.done) drawCrystal(c, now);
     for (const pk of pickups) drawPickup(pk, now);
+    drawNetworkPlayers(now);
     drawMiner(now);
     drawParticles(1 / 60, now);
 
@@ -2375,7 +2528,7 @@
     if (canvas.clientWidth !== cssW || canvas.clientHeight !== cssH) resizeCanvas();
 
     // автопроход по маршруту, выбранному тапом
-    if (state === 'playing' && autoPath.length && now >= autoNext){
+    if (state === 'playing' && (!netActive || netReady && !netMovePending) && autoPath.length && now >= autoNext){
       const nxt = autoPath.shift();
       autoNext = now + 105;
       tryMove(nxt.x - player.gx, nxt.y - player.gy);
@@ -2393,7 +2546,7 @@
     player.x += (tx - player.x) * k;
     player.y += (ty - player.y) * k;
 
-    if (state === 'playing'){
+    if (state === 'playing' && !netActive){
       fuel = Math.max(0, fuel - dt * 1.05);
       if (fuel <= 0){ updateHUD(); gameOver('Фонарь погас, и шахта сомкнулась.'); }
       updateHUD();
@@ -2421,14 +2574,12 @@
     const isArrow = e.code.startsWith('Arrow') || e.code === 'Space';
     if (isArrow) e.preventDefault();
 
-    const dir = KEYMAP[e.code];
-    if (!dir) return;
-
     if (state === 'title'){
-      if (e.code === 'Space' || e.code === 'Enter') openCitySelect();
+      if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); openCitySelect(); }
       return;
     }
-    if (state !== 'playing') return;
+    const dir = KEYMAP[e.code];
+    if (!dir || state !== 'playing') return;
     if (performance.now() - moveCooldown < 90) return;
     moveCooldown = performance.now();
     stopAuto();
@@ -2459,6 +2610,7 @@
     buildSkins();
   });
   el('skinsBtn').addEventListener('click', () => {
+    leaveNetwork();
     el('endScreen').classList.add('hidden');
     el('startScreen').classList.remove('hidden');
     state = 'title';
@@ -2477,6 +2629,8 @@
   newLevel();
   updateHUD();
   requestAnimationFrame(loop);
+
+  if (connection.token){ netActive = true; connection.resume(); }
 
 })();
 </script>
