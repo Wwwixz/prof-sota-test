@@ -18,6 +18,14 @@ New-Item -ItemType Directory -Path $portableRuntime | Out-Null
 foreach ($portableItem in @('dist','public','assets','scripts','index.html','questions.json','start.bat','package.json','package-lock.json','README.md','event-config.example.json')) {
   Copy-Item -LiteralPath (Join-Path $portableSource $portableItem) -Destination $portableOutput -Recurse
 }
+# В переносимом комплекте используется его собственный Node.js; основной BAT остаётся обычным.
+@'
+@echo off
+chcp 65001 >nul
+cd /d "%~dp0"
+"runtime\node.exe" scripts\launch.cjs
+if errorlevel 1 pause
+'@ | Set-Content -LiteralPath (Join-Path $portableOutput 'start.bat') -Encoding ASCII
 $portableArchive = Join-Path $portableRuntime 'node.zip'
 $portableBase = "https://nodejs.org/dist/$NodeVersion"
 $portableName = "node-$NodeVersion-win-x64.zip"

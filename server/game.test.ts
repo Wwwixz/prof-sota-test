@@ -6,6 +6,7 @@ import { Game } from './game';
 import { messageSchema, RateLimit } from './protocol';
 import { dirs, generateWorld } from './world';
 const data = JSON.parse(readFileSync(path.resolve(__dirname, '../../questions.json'), 'utf8'));
+const activeRoom = (game: Game, city: number, skin: number) => { const identity = game.create(city, skin); game.start(identity.room.code); return identity; };
 const setup = () => { let time = 1000; const game = new Game(data, () => time); return { game, advance: (ms = 100) => { time += ms; game.tick(); } }; };
 
 test('карта связная, кристаллов достаточно, старт и лестница доступны', () => {
@@ -21,7 +22,7 @@ test('карта связная, кристаллов достаточно, ст
   }
 });
 test('сервер проверяет шаг, стену, частоту движения и версию шахты', () => {
-  const { game, advance } = setup(), a = game.create(0, 1), { player: p, room } = a;
+  const { game, advance } = setup(), a = activeRoom(game, 0, 1), { player: p, room } = a;
   assert.throws(() => game.action(a, { type: 'move', level: 1, seq: 1, dx: 1, dy: 1 }));
   const [dx, dy] = dirs.find(([x, y]) => room.world.map[p.y + y]?.[p.x + x] === 0)!;
   game.action(a, { type: 'move', level: 1, seq: 2, dx, dy });
@@ -33,7 +34,7 @@ test('сервер проверяет шаг, стену, частоту дви�
   assert.throws(() => game.action(a, { type: 'move', level: 1, seq: 5, dx: 1, dy: 0 }));
 });
 test('комнаты изолированы, решения проверяются сервером, награда выдаётся один раз', () => {
-  const { game } = setup(), a = game.create(0, 0), b = game.join(a.room.code, 2), other = game.create(1, 1);
+  const { game } = setup(), a = activeRoom(game, 0, 0), b = game.join(a.room.code, 2), other = activeRoom(game, 1, 1);
   assert.notEqual(other.room.code, a.room.code);
   assert.equal(a.room.world, b.room.world);
   const c = a.room.world.crystals[0]; Object.assign(a.player, c); Object.assign(b.player, c);
@@ -52,7 +53,7 @@ test('комнаты изолированы, решения проверяютс
   assert.equal(JSON.stringify(game.snapshot(b)).includes(a.player.token), false);
 });
 test('ползунок, неверные ответы, штраф выхода и смерть сохраняют правила игры', () => {
-  const { game } = setup(), a = game.create(0, 0), c = a.room.world.crystals[0]; Object.assign(a.player, c);
+  const { game } = setup(), a = activeRoom(game, 0, 0), c = a.room.world.crystals[0]; Object.assign(a.player, c);
   game.action(a, { type: 'question', level: 1 });
   const pending = a.player.pending!;
   pending.q = { q: 'Число', type: 'slider', min: 0, max: 100, step: 1, answer: 90 };
@@ -70,7 +71,7 @@ test('ползунок, неверные ответы, штраф выхода �
   game.action(a, { type: 'next', level: 1 }); assert.equal(a.player.state, 'dead');
 });
 test('следующая шахта и победа общие; повторный переход отклоняется', () => {
-  const { game } = setup(), a = game.create(0, 0), b = game.join(a.room.code, 1);
+  const { game } = setup(), a = activeRoom(game, 0, 0), b = game.join(a.room.code, 1);
   for (let level = 1; level <= 2; level++) {
     a.room.world.crystals.forEach(c => { c.done = true; });
     const exit = a.room.world.exitCell;
@@ -83,7 +84,7 @@ test('следующая шахта и победа общие; повторны
   assert.throws(() => game.action(a, { type: 'move', level: 2, seq: 3, dx: 1, dy: 0 }));
 });
 test('восстановление сохраняет игрока; отключение снимает блокировку, RAM очищается', () => {
-  const { game, advance } = setup(), a = game.create(0, 0), token = a.player.token;
+  const { game, advance } = setup(), a = activeRoom(game, 0, 0), token = a.player.token;
   const c = a.room.world.crystals[0]; Object.assign(a.player, c); game.action(a, { type: 'question', level: 1 });
   a.player.score = 42; game.disconnect(a); assert.equal(c.owner, undefined);
   const fuel = a.player.fuel; advance(30000); assert.equal(a.player.fuel, fuel);
@@ -97,4 +98,26 @@ test('валидатор отвергает подмену очков, неко�
   let time = 0; const rate = new RateLimit(2, 1, () => time);
   assert.equal(rate.take(), true); assert.equal(rate.take(), true); assert.equal(rate.take(), false);
   time = 1000; assert.equal(rate.take(), true);
+});
+
+test('организатор собирает группу и запускает всех одновременно без расхода света в ожидании', () => {
+  const { game, advance } = setup();
+  const room = game.createRoom(0);
+  assert.equal(room.players.size, 0); assert.equal(room.started, false);
+  assert.throws(() => game.start(room.code));
+  advance(120000); assert.ok(game.rooms.has(room.code));
+  const a = game.join(room.code, 0), b = game.join(room.code, 2);
+  advance(120000);
+  assert.equal(a.player.fuel, 100); assert.equal(b.player.fuel, 100);
+  assert.equal(game.snapshot(a).me.state, 'waiting');
+  assert.throws(() => game.action(a, { type: 'move', level: 1, seq: 1, dx: 1, dy: 0 }));
+  assert.throws(() => game.action(a, { type: 'question', level: 1 }));
+  game.disconnect(b); advance(10000); game.resume(b.player.token);
+  assert.equal(b.player.state, 'waiting');
+  game.start(room.code);
+  assert.equal(a.player.state, 'playing'); assert.equal(b.player.state, 'playing');
+  assert.deepEqual({ x: a.player.x, y: a.player.y }, room.world.start);
+  assert.equal(a.player.fuel, 100); advance(1000); assert.ok(a.player.fuel < 100);
+  assert.throws(() => game.start(room.code));
+  const c = game.join(room.code, 1); assert.equal(c.player.state, 'playing');
 });

@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const { createApp } = require('../dist/server/index');
 const questions = JSON.parse(fs.readFileSync('questions.json', 'utf8'));
 const source = fs.readFileSync('index.html', 'utf8').replace(/\}\)\(\);\s*<\/script>/,
-  `window.__test={snapshot:()=>({map,crystals,player:{...player},state,netLevel,netReady,netMovePending,netPeers,activeQuestion,score}),move:tryMove,connection};})();</script>`);
+  `window.__test={snapshot:()=>({map,crystals,player:{...player},fuel,state,netLevel,netReady,netMovePending,netPeers,activeQuestion,score}),move:tryMove,connection};})();</script>`);
 function nearest(s) {
   const queue = [{ x: s.player.gx, y: s.player.gy, path: [] }], visited = new Set([s.player.gx + ',' + s.player.gy]);
   for (let i = 0; i < queue.length; i++) {
@@ -32,14 +32,30 @@ function nearest(s) {
       await p.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: source }));
       await p.goto(base + '/index.html'); return p;
     }
-    const a = await page(390); await a.click('#startBtn'); await a.locator('.citybtn').first().click();
-    await a.waitForFunction(() => window.__test.snapshot().netReady && window.__test.snapshot().netLevel === 1);
-    const identity = [...app.game.tokens.values()][0], code = identity.room.code, id = identity.player.id;
+    const admin = await browser.newPage(); app.setTunnel('https://example.trycloudflare.com', 'Test tunnel');
+    await admin.goto(base + '/organizer#' + app.adminToken); await admin.waitForSelector('#qr:not([hidden])');
+    await admin.waitForSelector('#createBtn:not([disabled])'); await admin.click('#createBtn');
+    await admin.waitForFunction(() => document.getElementById('createdRoom').textContent.length > 0);
+    const code = [...app.game.rooms.keys()][0]; assert.ok(code);
+    const a = await page(390); await a.fill('#roomCode', code); await a.click('#startBtn');
+    await a.waitForSelector('#netLobby:not([hidden])');
+    const identity = [...app.game.tokens.values()][0], id = identity.player.id;
     const b = await page(360); await b.fill('#roomCode', code); await b.locator('#roomJoin button').click();
     await b.waitForFunction(() => window.__test.snapshot().netLevel === 1);
     await a.waitForFunction(() => window.__test.snapshot().netPeers.length === 1);
     assert.deepEqual(await a.evaluate(() => window.__test.snapshot().map), await b.evaluate(() => window.__test.snapshot().map));
-    console.log('Mobile create/join and shared map OK');
+    assert.equal(await a.evaluate(() => window.__test.snapshot().state), 'waiting');
+    await a.evaluate(() => window.__test.move(1, 0)); await a.waitForTimeout(700);
+    assert.equal(await a.evaluate(() => window.__test.snapshot().fuel), 100);
+    await a.evaluate(() => window.__test.connection.socket.close()); await a.waitForTimeout(100);
+    await a.waitForFunction(() => window.__test.snapshot().netReady);
+    assert.equal(await a.evaluate(() => window.__test.snapshot().state), 'waiting');
+    assert.equal(app.game.tokens.get(identity.player.token).player.id, id);
+    const start = admin.locator('#rooms tr[data-code="' + code + '"] button[data-action="start"]');
+    await start.waitFor(); await admin.waitForFunction(() => document.querySelector('#rooms button[data-action="start"]:not([disabled])'));
+    await start.click();
+    for (const player of [a,b]) { await player.waitForFunction(() => window.__test.snapshot().state === 'playing'); assert.equal(await player.locator('#netLobby').getAttribute('hidden'), ''); }
+    console.log('Admin creates room; two mobile players wait and reconnect; admin starts both OK');
     const steps = nearest(await a.evaluate(() => window.__test.snapshot()));
     for (const [dx, dy] of steps) {
       await a.evaluate(([dx, dy]) => window.__test.move(dx, dy), [dx, dy]);
@@ -61,8 +77,6 @@ function nearest(s) {
     await a.waitForFunction(() => window.__test.snapshot().netReady);
     assert.equal(app.game.tokens.get(identity.player.token).player.id, id);
     console.log('Reconnect preserves player OK');
-    const admin = await browser.newPage(); app.setTunnel('https://example.trycloudflare.com', 'Test tunnel');
-    await admin.goto(base + '/organizer#' + app.adminToken); await admin.waitForSelector('#qr:not([hidden])');
     assert.equal(await admin.locator('#count').textContent(), '2'); console.log('Organizer and QR OK');
     assert.deepEqual(errors, []);
   } finally { if (browser) await browser.close(); await app.close(); }

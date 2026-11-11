@@ -44,12 +44,15 @@ async function next(peer, type) {
     assert.equal(health.status, 200);
     assert.equal((await fetch(publicUrl + '/api/admin/state', { headers, signal: AbortSignal.timeout(15000) })).status, 403);
     console.log('Public HTTPS and admin protection OK');
+    const created = await (await fetch(base + '/api/admin/create', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ city: 0 }) })).json();
     const a = await connect(publicUrl.replace('https:', 'wss:') + '/ws');
-    a.ws.send(JSON.stringify({ type: 'create', city: 0, skin: 0 }));
+    a.ws.send(JSON.stringify({ type: 'join', code: created.code, skin: 0 }));
     const welcome = await next(a, 'welcome'), first = await next(a, 'state');
     const b = await connect(publicUrl.replace('https:', 'wss:') + '/ws');
     b.ws.send(JSON.stringify({ type: 'join', code: welcome.code, skin: 2 })); await next(b, 'welcome');
     const second = await next(b, 'state'); assert.deepEqual(first.world.map, second.world.map); assert.equal(second.players.length, 2);
+    assert.equal(second.started, false);
+    assert.equal((await fetch(base + '/api/admin/start', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ code: created.code }) })).status, 200);
     console.log('Two players connected through public WSS OK');
     console.log('Portable Node.js, cloudflared and real Quick Tunnel OK');
   } finally {

@@ -377,6 +377,11 @@
   #netLeave{min-height:36px;padding:7px 10px;font-size:12px}
   #netCover{position:absolute;inset:0;z-index:10;background:rgba(8,7,6,.94);display:flex;flex-direction:column;gap:18px;align-items:center;justify-content:center;text-align:center;line-height:1.5;padding:20px;color:var(--amber-2)}
   #netError{color:#ffb1a8;font-size:13px;line-height:1.4;margin:8px 0 0;overflow-wrap:anywhere}
+  #netLobby{position:absolute;inset:0;z-index:9;display:flex;align-items:safe center;justify-content:center;overflow-y:auto;padding:12px;text-align:center;line-height:1.5;background:rgba(8,7,6,.97)}
+  #netLobby[hidden]{display:none}
+  #netLobby h1{font-size:28px}#lobbyCode{font-size:24px;letter-spacing:.12em;color:var(--amber-2)}
+  #lobbyStatus{color:var(--amber-2)}#lobbyPlayers{list-style:none;padding:0;margin:14px 0;max-height:30dvh;overflow-y:auto;text-align:left}
+  #lobbyPlayers li{padding:7px 9px;border-bottom:1px solid var(--edge);font-size:13px}#lobbyLeave{min-height:44px}
   .screen{align-items:safe center;overflow-y:auto}
   @media(max-width:640px){
     body{padding:max(6px,env(safe-area-inset-top)) max(6px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left))}
@@ -421,23 +426,12 @@
         <div class="skins" id="skinRow"></div>
         <div class="skin-desc" id="skinDesc"></div>
         <div class="qsource" id="qSource">вопросы загружаются…</div>
-        <button class="btn" id="startBtn">Спуститься в шахту</button>
         <form class="room-join" id="roomJoin">
           <input id="roomCode" aria-label="Код комнаты" placeholder="Код комнаты" maxlength="5" autocomplete="off" autocapitalize="characters" required pattern="[A-Za-z2-9]{5}">
-          <button class="btn ghost" type="submit">Войти к друзьям</button>
+          <button class="btn" id="startBtn" type="submit">Войти в комнату</button>
         </form>
+        <p class="qsource" style="margin:8px 0 0">Введите код от организатора. Игра начнётся для всей группы одновременно.</p>
         <p id="netError" role="alert"></p>
-      </div>
-    </div>
-
-    <div class="screen hidden" id="cityScreen">
-      <div class="card">
-        <h1>Откуда начнём?</h1>
-        <p class="sub">Выберите город Смоленской области. Цель — СОТА в Смоленске (Смоленская областная технологическая академия): чем дальше город, тем больше шахт придётся пройти, но и награда за путь больше.</p>
-        <div class="citygrid" id="cityGrid"></div>
-        <div class="btnrow" style="margin-top:12px">
-          <button class="btn ghost" id="backBtn" type="button">Назад к скинам</button>
-        </div>
       </div>
     </div>
 
@@ -490,6 +484,12 @@
       </div>
     </div>
 
+    <div id="netLobby" hidden>
+      <div class="card"><h1>Вы в комнате</h1><p>Код: <b id="lobbyCode"></b> · <span id="lobbyCity"></span></p>
+        <p id="lobbyStatus" role="status">Ожидаем, когда организатор начнёт игру.</p><ul id="lobbyPlayers"></ul>
+        <button id="lobbyLeave" class="btn ghost" type="button">Выйти из комнаты</button>
+      </div>
+    </div>
     <div id="netCover" hidden><span id="netCoverText">Подключаемся к серверу…</span><button id="netCancel" class="btn ghost" type="button">В главное меню</button></div>
     <div id="toast"></div>
   </div>
@@ -1579,60 +1579,6 @@
     g.drawImage(sp, 0, 0);
   }
 
-  function buildCities(){
-    const grid = el('cityGrid');
-    if (!grid) return;
-    grid.innerHTML = '';
-    CITIES.forEach(c => {
-      const mines = minesFor(c.km);
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'citybtn';
-      const nm = document.createElement('b');
-      nm.textContent = c.name;
-      const info = document.createElement('small');
-      info.innerHTML = c.km + ' км · <em>' + mines + ' ' + plural(mines, 'шахта', 'шахты', 'шахт') + '</em>';
-      b.appendChild(nm);
-      b.appendChild(info);
-      b.addEventListener('click', () => startGame(c));
-      grid.appendChild(b);
-    });
-  }
-
-  function openCitySelect(){
-    leaveNetwork();
-    state = 'title';
-    stopAuto();
-    speech = null;
-    el('startScreen').classList.add('hidden');
-    el('endScreen').classList.add('hidden');
-    el('qScreen').classList.add('hidden');
-    el('cityScreen').classList.remove('hidden');
-    buildCities();
-  }
-
-  function startGame(city){
-    if (!netRendering){ beginNetwork({ type: 'create', city: CITIES.indexOf(city), skin: skinIndex }); return; }
-    chosenCity = city;
-    startKm = city.km;
-    completedMines = 0;
-    runOre = 0;
-    totalMines = minesFor(city.km);
-    depth = 1;
-    score = 0; fuel = 100; hp = 100; answerStreak = 0;
-    decks.easy = []; decks.hard = [];
-    shake = 0; flash = 0; speech = null;
-    newLevel();
-    el('endScreen').classList.add('hidden');
-    el('qScreen').classList.add('hidden');
-    el('startScreen').classList.add('hidden');
-    el('cityScreen').classList.add('hidden');
-    state = 'playing';
-    updateHUD();
-    toast(city.name + ' → Соты: ' + city.km + ' км · ' + totalMines + ' ' + plural(totalMines, 'шахта', 'шахты', 'шахт'));
-  }
-
-  /* Сервер проверяет игровые действия; браузер сохраняет исходную отрисовку. */
   const connection = new window.SotaConnection(message => {
     if (message.type === 'error') { netSubmitting = false; toast(message.message); return; }
     if (message.type !== 'state' || !netActive) return;
@@ -1654,7 +1600,18 @@
     el('netBar').hidden = false;
     el('netStatus').textContent = 'Комната ' + message.code + ' · Онлайн: ' + message.players.filter(p => p.connected).length + ' · ' + chosenCity.name;
     el('netCover').hidden = true;
-    ['startScreen','cityScreen'].forEach(id => el(id).classList.add('hidden'));
+    if (!message.started){
+      state = 'waiting'; stopAuto(); netMovePending = 0; el('netLobby').hidden = false;
+      ['startScreen','qScreen','endScreen'].forEach(id => el(id).classList.add('hidden'));
+      el('lobbyCode').textContent = message.code; el('lobbyCity').textContent = chosenCity.name;
+      const online = message.players.filter(p => p.connected).length;
+      el('lobbyStatus').textContent = 'Участников: ' + online + '/16. Ожидаем, когда организатор начнёт игру.';
+      el('lobbyPlayers').replaceChildren();
+      message.players.forEach(p => { const li = document.createElement('li'); li.textContent = p.name + (p.id === me.id ? ' (вы)' : '') + ' · ' + ['Шахтёр','Гном','Инженер'][p.skin] + (p.connected ? '' : ' · нет связи'); el('lobbyPlayers').appendChild(li); });
+      score = me.score; fuel = me.fuel; hp = me.hp; answerStreak = me.streak; updateHUD(); return;
+    }
+    el('netLobby').hidden = true;
+    ['startScreen'].forEach(id => el(id).classList.add('hidden'));
     const pending = me.pending;
     if (pending){
       activeCrystal = crystals[pending.index];
@@ -1699,7 +1656,7 @@
       el('netCoverText').textContent = text || 'Подключаемся к серверу…';
     } else if (status === 'error') {
       leaveNetwork(); state = 'title'; el('startScreen').classList.remove('hidden');
-      ['cityScreen','qScreen','endScreen'].forEach(id => el(id).classList.add('hidden'));
+      ['qScreen','endScreen'].forEach(id => el(id).classList.add('hidden'));
       el('netError').textContent = text || 'Не удалось подключиться';
     }
   });
@@ -1717,14 +1674,15 @@
   }
   function leaveNetwork() {
     connection.stop(); netActive = false; netReady = false; netPeers = []; netLevel = 0; netMovePending = 0;
-    el('netCover').hidden = true; el('netBar').hidden = true; stopAuto();
+    el('netCover').hidden = true; el('netLobby').hidden = true; el('netBar').hidden = true; stopAuto();
   }
   function leaveToMenu() {
     leaveNetwork(); state = 'title';
-    ['cityScreen','qScreen','endScreen'].forEach(id => el(id).classList.add('hidden'));
+    ['qScreen','endScreen'].forEach(id => el(id).classList.add('hidden'));
     el('startScreen').classList.remove('hidden'); buildSkins();
   }
   el('netLeave').addEventListener('click', leaveToMenu); el('netCancel').addEventListener('click', leaveToMenu);
+  el('lobbyLeave').addEventListener('click', leaveToMenu);
   el('roomJoin').addEventListener('submit', event => {
     event.preventDefault(); const code = el('roomCode').value.trim().toUpperCase();
     if (!/^[A-Z2-9]{5}$/.test(code)){ el('netError').textContent = 'Введите код комнаты из пяти символов'; return; }
@@ -2575,7 +2533,7 @@
     if (isArrow) e.preventDefault();
 
     if (state === 'title'){
-      if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); openCitySelect(); }
+      if (e.code === 'Space' && e.target === document.body) { e.preventDefault(); el('roomCode').focus(); }
       return;
     }
     const dir = KEYMAP[e.code];
@@ -2601,14 +2559,7 @@
     btn.addEventListener('contextmenu', e => e.preventDefault());
   });
 
-  el('startBtn').addEventListener('click', openCitySelect);
-  el('againBtn').addEventListener('click', openCitySelect);
-  el('backBtn').addEventListener('click', () => {
-    el('cityScreen').classList.add('hidden');
-    el('startScreen').classList.remove('hidden');
-    state = 'title';
-    buildSkins();
-  });
+  el('againBtn').addEventListener('click', leaveToMenu);
   el('skinsBtn').addEventListener('click', () => {
     leaveNetwork();
     el('endScreen').classList.add('hidden');

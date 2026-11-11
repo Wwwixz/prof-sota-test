@@ -6,6 +6,7 @@ import { WebSocket, WebSocketServer } from 'ws';
 import QRCode from 'qrcode';
 import { Game, Identity } from './game';
 import { GameError, messageSchema, RateLimit } from './protocol';
+import { CITIES } from './cities';
 
 export function createApp(root = path.resolve(__dirname, '../..')) {
   const game = new Game(JSON.parse(readFileSync(path.join(root, 'questions.json'), 'utf8')));
@@ -48,18 +49,26 @@ export function createApp(root = path.resolve(__dirname, '../..')) {
         if (!authorized(req)) { json(res, 403, { error: 'Нет доступа' }); return; }
         if (pathname === '/api/admin/state' && req.method === 'GET') {
           json(res, 200, { status: 'Сервер работает', publicUrl, tunnelStatus, rooms: game.overview(),
-            connected: [...peers.values()].filter(p => p.identity).length }); return;
+            connected: [...peers.values()].filter(p => p.identity).length, cities: CITIES }); return;
         }
         if (pathname === '/api/admin/qr' && req.method === 'GET') {
           if (!publicUrl) { json(res, 409, { error: 'Публичная ссылка ещё не получена' }); return; }
           res.writeHead(200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'no-store' });
           res.end(await QRCode.toString(publicUrl, { type: 'svg', errorCorrectionLevel: 'M', margin: 2 })); return;
         }
-        if (pathname === '/api/admin/end' && req.method === 'POST') {
+        if (['/api/admin/create', '/api/admin/start', '/api/admin/end'].includes(pathname) && req.method === 'POST') {
           let body = ''; for await (const chunk of req) { body += chunk; if (body.length > 2048) { json(res, 413, { error: 'Запрос слишком большой' }); return; } }
-          let code: unknown; try { code = JSON.parse(body).code; } catch { json(res, 400, { error: 'Некорректный запрос' }); return; }
+          let input; try { input = JSON.parse(body); if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error(); } catch { json(res, 400, { error: 'Некорректный запрос' }); return; }
+          if (pathname === '/api/admin/create') {
+            if (!Number.isInteger(input.city) || input.city < 0 || input.city >= CITIES.length) { json(res, 400, { error: 'Выберите город' }); return; }
+            const room = game.createRoom(input.city); json(res, 201, { code: room.code }); return;
+          }
+          const code: unknown = input.code;
           if (code !== '*' && (typeof code !== 'string' || !/^[A-Z2-9]{5}$/.test(code))) { json(res, 400, { error: 'Некорректный код' }); return; }
-          if (code === '*') for (const room of [...game.rooms.keys()]) game.end(room); else game.end(code as string);
+          if (pathname === '/api/admin/start') {
+            if (code === '*') { json(res, 400, { error: 'Выберите одну комнату' }); return; }
+            game.start(code as string);
+          } else if (code === '*') for (const room of [...game.rooms.keys()]) game.end(room); else game.end(code as string);
           broadcast(); json(res, 200, { ok: true }); return;
         }
         json(res, 404, { error: 'Команда не найдена' }); return;
@@ -109,9 +118,9 @@ export function createApp(root = path.resolve(__dirname, '../..')) {
         if (!parsed.success) { if (++invalid >= 3) ws.close(1008, 'Некорректные сообщения'); throw new GameError('Некорректное сообщение'); }
         const m = parsed.data;
         if (m.type === 'ping') { send(ws, { type: 'pong' }); return; }
-        if (m.type === 'create' || m.type === 'join' || m.type === 'resume') {
+        if (m.type === 'join' || m.type === 'resume') {
           if (peer.identity) throw new GameError('Сначала выйдите из текущей комнаты');
-          peer.identity = m.type === 'create' ? game.create(m.city, m.skin) : m.type === 'join' ? game.join(m.code, m.skin) : game.resume(m.token);
+          peer.identity = m.type === 'join' ? game.join(m.code, m.skin) : game.resume(m.token);
           const old = owners.get(peer.identity.player.id); owners.set(peer.identity.player.id, ws); old?.close(1000, 'Восстановлено другое соединение');
           clearTimeout(timeout); send(ws, { type: 'welcome', token: peer.identity.player.token, code: peer.identity.room.code });
         } else {

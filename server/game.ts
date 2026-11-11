@@ -12,9 +12,9 @@ const questionSchema = z.object({ q: z.string(), a: z.array(z.string()).optional
 export type Question = z.infer<typeof questionSchema>;
 type Pending = { id: string; index: number; q: Question; answered: boolean; hint: number[]; result?: { ok: boolean; accuracy: number; value: number } };
 export type Player = Cell & { id: string; token: string; skin: number; name: string; dir: number; ack: number; score: number; fuel: number; hp: number; streak: number;
-  state: 'playing' | 'question' | 'dead' | 'won'; reason: string; connected: boolean; disconnectedAt: number; lastTick: number; lastMove: number; pending?: Pending;
+  state: 'waiting' | 'playing' | 'question' | 'dead' | 'won'; reason: string; connected: boolean; disconnectedAt: number; lastTick: number; lastMove: number; pending?: Pending;
   decks: { easy: number[]; hard: number[] } };
-export type Room = { code: string; cityIndex: number; level: number; totalMines: number; runOre: number; finished: boolean; world: World; players: Map<string, Player>; touched: number };
+export type Room = { code: string; cityIndex: number; level: number; totalMines: number; runOre: number; started: boolean; finished: boolean; world: World; players: Map<string, Player>; touched: number };
 export type Identity = { room: Room; player: Player };
 const clamp = (n: number, min = 0, max = 100) => Math.min(max, Math.max(min, n));
 export class Game {
@@ -26,13 +26,27 @@ export class Game {
     if (!this.questions.some(q => q.hard) || !this.questions.some(q => !q.hard)) throw new Error('Нужны обычные и сложные вопросы');
   }
   create(cityIndex: number, skin: number): Identity {
+    return this.add(this.createRoom(cityIndex), skin);
+  }
+  createRoom(cityIndex: number): Room {
     if (this.rooms.size >= 20 || this.tokens.size >= 120) throw new GameError('Все места заняты. Обратитесь к организатору.');
     const city = CITIES[cityIndex]; if (!city) throw new GameError('Город не найден');
     let code = '';
     do { code = Array.from({ length: 5 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[randomInt(32)]).join(''); } while (this.rooms.has(code));
     const room: Room = { code, cityIndex, level: 1, totalMines: clamp(Math.ceil(city.km / 45), 2, 5), runOre: 0,
-      finished: false, world: generateWorld(1), players: new Map(), touched: this.now() };
-    this.rooms.set(code, room); return this.add(room, skin);
+      started: false, finished: false, world: generateWorld(1), players: new Map(), touched: this.now() };
+    this.rooms.set(code, room); return room;
+  }
+  start(code: string): void {
+    const room = this.rooms.get(code);
+    if (!room) throw new GameError('Комната не найдена');
+    if (room.started || room.finished) throw new GameError('Игра уже запущена');
+    if (![...room.players.values()].some(p => p.connected)) throw new GameError('Дождитесь подключения хотя бы одного игрока');
+    room.started = true; room.touched = this.now();
+    for (const p of room.players.values()) {
+      p.state = 'playing'; p.x = room.world.start.x; p.y = room.world.start.y;
+      p.lastTick = this.now(); p.lastMove = -Infinity;
+    }
   }
   join(code: string, skin: number): Identity {
     const room = this.rooms.get(code); if (!room) throw new GameError('Комната не найдена. Проверьте код.');
@@ -43,7 +57,7 @@ export class Game {
     if (room.players.size >= 16 || this.tokens.size >= 120) throw new GameError('В комнате нет свободных мест');
     const number = Math.max(0, ...[...room.players.values()].map(p => Number(p.name.split(' ')[1]))) + 1;
     const player: Player = { ...room.world.start, id: randomUUID(), token: randomUUID(), skin, name: `Игрок ${number}`, dir: 1, ack: 0,
-      score: 0, fuel: 100, hp: 100, streak: 0, state: 'playing', reason: '', connected: true, disconnectedAt: 0,
+      score: 0, fuel: 100, hp: 100, streak: 0, state: room.started ? 'playing' : 'waiting', reason: '', connected: true, disconnectedAt: 0,
       lastTick: this.now(), lastMove: -Infinity, decks: { easy: [], hard: [] } };
     room.players.set(player.id, player); room.touched = this.now();
     const identity = { room, player }; this.tokens.set(player.token, identity); return identity;
@@ -78,7 +92,7 @@ export class Game {
         }
         if (!player.connected && now - player.disconnectedAt > 60000) this.leave({ room, player });
       }
-      if (!room.players.size && now - room.touched > 60000) this.rooms.delete(room.code);
+      if (!room.players.size && now - room.touched > (room.started ? 60000 : 30 * 60000)) this.rooms.delete(room.code);
     }
   }
   private die(room: Room, player: Player, reason: string): void {
@@ -101,6 +115,7 @@ export class Game {
   }
   action({ room, player: p }: Identity, m: Message): void {
     if (!this.rooms.has(room.code)) throw new GameError('Сессия завершена организатором');
+    if (!room.started) throw new GameError('Игра ещё не началась. Ожидайте организатора.');
     room.touched = this.now();
     if ('level' in m && m.level !== room.level) throw new GameError('Шахта сменилась. Состояние обновлено.');
     if (p.state === 'dead' || p.state === 'won') throw new GameError('Поход для вас завершён');
@@ -171,7 +186,7 @@ export class Game {
   }
   snapshot({ room, player: p }: Identity) {
     const pending = p.pending;
-    return { type: 'state', code: room.code, city: CITIES[room.cityIndex], level: room.level, totalMines: room.totalMines,
+    return { type: 'state', code: room.code, started: room.started, city: CITIES[room.cityIndex], level: room.level, totalMines: room.totalMines,
       runOre: room.runOre, collected: this.collected(room), finished: room.finished, world: room.world,
       players: [...room.players.values()].map(({ id, name, skin, x, y, dir, connected, state }) => ({ id, name, skin, x, y, dir, connected, state })),
       me: { id: p.id, x: p.x, y: p.y, dir: p.dir, ack: p.ack, score: p.score, fuel: p.fuel, hp: p.hp, streak: p.streak, state: p.state, reason: p.reason,
@@ -179,5 +194,6 @@ export class Game {
           question: pending.answered ? pending.q : { ...pending.q, c: undefined, answer: undefined, fact: undefined } } } };
   }
   overview() { return [...this.rooms.values()].map(r => ({ code: r.code, city: CITIES[r.cityIndex].name, level: r.level,
-    players: [...r.players.values()].filter(p => p.connected).length, reserved: r.players.size, finished: r.finished })); }
+    players: [...r.players.values()].filter(p => p.connected).length, reserved: r.players.size, started: r.started, finished: r.finished,
+    roster: [...r.players.values()].map(({ id, name, skin, connected, state }) => ({ id, name, skin, connected, state })) })); }
 }
