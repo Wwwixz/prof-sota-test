@@ -11,6 +11,7 @@ import { CITIES } from './cities';
 export function createApp(root = path.resolve(__dirname, '../..')) {
   const game = new Game(JSON.parse(readFileSync(path.join(root, 'questions.json'), 'utf8')));
   const adminToken = randomUUID();
+  const healthId = randomUUID();
   let publicUrl = '', tunnelStatus = 'Туннель не запущен', shuttingDown = false;
   const peers = new Map<WebSocket, { identity?: Identity; alive: boolean }>();
   const owners = new Map<string, WebSocket>();
@@ -73,11 +74,12 @@ export function createApp(root = path.resolve(__dirname, '../..')) {
         }
         json(res, 404, { error: 'Команда не найдена' }); return;
       }
-      if (pathname === '/api/health' && req.method === 'GET') { json(res, 200, { ok: !shuttingDown }); return; }
+      if (pathname === '/api/health' && req.method === 'GET') { json(res, 200, { ok: !shuttingDown, service: 'profsota-game', instance: healthId }); return; }
       if (req.method !== 'GET' && req.method !== 'HEAD') { json(res, 405, { error: 'Метод не поддерживается' }); return; }
       if (pathname === '/organizer' && !local(req)) { json(res, 403, { error: 'Панель доступна только на ноутбуке организатора' }); return; }
       const fixed: Record<string, string> = { '/': 'index.html', '/index.html': 'index.html', '/questions.json': 'questions.json',
-        '/organizer': 'public/organizer.html', '/organizer.js': 'public/organizer.js', '/network.js': 'public/network.js' };
+        '/organizer': 'public/organizer.html', '/organizer.js': 'public/organizer.js', '/network.js': 'public/network.js',
+        '/public/network.js': 'public/network.js' };
       const relative = fixed[pathname] || (pathname.startsWith('/assets/') && !pathname.includes('..') && !pathname.includes('\\') ? pathname.slice(1) : null);
       if (!relative) { json(res, 404, { error: 'Файл не найден' }); return; }
       const file = path.resolve(root, relative);
@@ -144,7 +146,7 @@ export function createApp(root = path.resolve(__dirname, '../..')) {
   const heartbeat = setInterval(() => { for (const [ws, p] of peers) { if (!p.alive) ws.terminate(); else { p.alive = false; ws.ping(); } } }, 15000);
   server.on('error', error => console.error('Ошибка сервера:', (error as NodeJS.ErrnoException).code || error.name));
   wss.on('error', error => console.error('Ошибка WebSocket-сервера:', error.name));
-  return { server, game, adminToken,
+  return { server, game, adminToken, healthId,
     setTunnel(url: string, status: string) {
       publicUrl = '';
       try { const parsed = new URL(url); if (parsed.protocol === 'https:' && !parsed.username && !parsed.password) publicUrl = parsed.origin; } catch { /* Туннель ещё не получил адрес. */ }
@@ -164,7 +166,7 @@ if (require.main === module) {
   app.server.once('error', () => { app.close().finally(() => process.exit(1)); });
   app.server.listen(Number(process.env.PORT || 8787), '127.0.0.1', () => {
     const address = app.server.address(); const port = typeof address === 'object' && address ? address.port : 8787;
-    if (process.send) process.send({ type: 'ready', port, token: app.adminToken });
+    if (process.send) process.send({ type: 'ready', port, token: app.adminToken, healthId: app.healthId });
     else console.log(`Панель организатора: http://127.0.0.1:${port}/organizer#${app.adminToken}`);
   });
   process.on('message', (message: any) => {

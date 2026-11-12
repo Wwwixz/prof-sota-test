@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server/index.js",
-    "test": "npm run build && node --test dist/server/*.test.js",
+    "test": "npm run build && node --test dist/server/*.test.js scripts/*.test.cjs",
     "event": "node scripts/launch.cjs",
     "portable": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-portable.ps1"
   },

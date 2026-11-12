@@ -2,9 +2,10 @@
 const { fork, spawn } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const { checkTunnel } = require('./tunnel-health.cjs');
 const root = path.resolve(__dirname, '..');
 process.chdir(root);
-let server, tunnel, restarting, watchdog, stopping = false, failures = 0, lastUrl = '';
+let server, tunnel, restarting, watchdog, healthId, stopping = false, failures = 0, lastUrl = '';
 const localOnly = process.argv.includes('--local');
 let config = { mode: 'quick', publicUrl: '', tunnelName: '' };
 try { config = { ...config, ...JSON.parse(fs.readFileSync(path.join(root, 'event-config.local.json'), 'utf8')) }; }
@@ -32,7 +33,17 @@ function startTunnel(port) {
   } else args = ['tunnel', '--no-autoupdate', '--url', `http://127.0.0.1:${port}`, '--protocol', 'http2'];
   notify('', 'Подключаемся к Cloudflare. Нужен доступ к интернету…');
   const child = tunnel = spawn(cloudflared, args, { cwd: root, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
-  let buffer = '', registered = false;
+  let buffer = '', registered = false, checking = false, verifiedUrl = '', probeTimer;
+  async function verify(url) {
+    if (checking || stopping || child !== tunnel || child.exitCode !== null || !registered || url === verifiedUrl) return;
+    checking = true; clearTimeout(probeTimer);
+    const result = await checkTunnel(url, healthId);
+    checking = false;
+    if (stopping || child !== tunnel || child.exitCode !== null || !registered) return;
+    notify(url, result.message);
+    if (result.ok) { verifiedUrl = url; console.log('Публичная HTTPS-проверка игры прошла.'); }
+    else probeTimer = setTimeout(() => verify(url), 5000);
+  }
   watchdog = setTimeout(() => {
     if (!registered && child === tunnel) { notify('', 'Туннель не подключился за 45 секунд. Проверьте интернет и доступность Cloudflare.'); child.kill(); }
   }, 45000);
@@ -43,19 +54,26 @@ function startTunnel(port) {
     if (/Registered tunnel connection/.test(buffer)) {
       registered = true; clearTimeout(watchdog); failures = 0;
       const url = config.mode === 'named' ? config.publicUrl : lastUrl;
-      if (url) { notify(url, 'Туннель подключён. Игроки могут открывать ссылку.'); console.log('Ссылка для школьников:', url); }
+      if (url && url !== verifiedUrl) {
+        notify(url, 'Туннель подключён. Проверяем доступность игры по публичному адресу…');
+        console.log('Публичный адрес (проверяем доступность):', url); verify(url);
+      }
       buffer = '';
     }
-    if (/failed to request quick Tunnel|Unable to establish connection|no such host|connection refused|Connection terminated|failed to serve tunnel connection|All connections have been terminated/i.test(buffer))
+    if (/failed to request quick Tunnel|Unable to establish connection|no such host|connection refused|Connection terminated|failed to serve tunnel connection|All connections have been terminated/i.test(buffer)) {
+      registered = false; verifiedUrl = ''; clearTimeout(probeTimer);
       notify('', 'Нет связи с Cloudflare. Проверяем интернет и повторяем подключение…');
+    }
   }
   child.stdout.on('data', output); child.stderr.on('data', output);
   child.on('error', error => {
+    clearTimeout(probeTimer);
     clearTimeout(watchdog);
     notify('', error.code === 'ENOENT' ? 'cloudflared не найден. Подготовьте переносимую версию или установите Cloudflare Tunnel.' : 'Не удалось запустить туннель. Проверьте runtime и антивирус.');
     console.error('Не удалось запустить cloudflared:', error.code);
   });
   child.on('exit', () => {
+    clearTimeout(probeTimer);
     clearTimeout(watchdog); if (stopping || child !== tunnel) return;
     lastUrl = ''; notify('', 'Туннель отключён. Повторяем подключение…');
     restarting = setTimeout(() => startTunnel(port), Math.min(2000 * 2 ** failures++, 30000));
@@ -64,6 +82,7 @@ function startTunnel(port) {
 server = fork(path.join(root, 'dist/server/index.js'), [], { cwd: root, windowsHide: true, stdio: ['inherit', 'inherit', 'inherit', 'ipc'] });
 server.on('message', message => {
   if (message.type !== 'ready') return;
+  healthId = message.healthId;
   const url = `http://127.0.0.1:${message.port}/organizer#${message.token}`;
   console.log('Сервер работает. Панель организатора:', url);
   console.log('Для остановки нажмите Ctrl+C. Не закрывайте это окно во время игры.');

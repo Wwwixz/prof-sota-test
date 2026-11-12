@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Шахта Знаний — игра</title>
 <style>
-  :root{
-    --amber:#f2a441;
-    --amber-2:#ffd08a;
-    --amber-dim:#8a5c22;
-    --ink:#0a0908;
-    --panel:#17130f;
-    --edge:#332a20;
-    --text:#e9e1d4;
-    --muted:#9b8f7e;
-    --danger:#e2564a;
-    --good:#5fd08a;
-  }
+:root{
+  color-scheme:light;
+  --primary:#0199DB;--primary-hover:#007DB5;--primary-soft:#E3F3FC;
+  --danger:#BE2326;--danger-hover:#A91C20;--brand-gray:#979797;
+  --page:#F4F7FA;--panel:#FFFFFF;--text:#18232F;--muted:#64748B;
+  --edge:#E2E8F0;--good:#16A34A;
+  --success-soft:#EDF8F0;--danger-soft:#FBEFF0;
+  --shadow:0 4px 18px rgb(24 35 47 / 5%);
+}
+:root{--amber:var(--primary);--amber-2:var(--primary-hover);--amber-dim:var(--primary-hover);--ink:var(--page)}
+
+
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
@@ -106,12 +106,12 @@
     letter-spacing:.02em;
     background:linear-gradient(180deg,#ffe2ac,#e59a35 70%,#b8701d);
     -webkit-background-clip:text;background-clip:text;color:transparent;
-    text-shadow:0 0 34px rgba(242,164,65,.18);
+    text-shadow:0 0 34px rgba(1,153,219,.18);
   }
   .sub{color:var(--muted);font-size:14px;margin:0 0 18px}
   .rules{
     display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;
-    margin:0 0 20px;text-align:left;font-size:13px;color:#cfc4b2;
+    margin:0 0 20px;text-align:left;font-size:13px;color:var(--muted);
   }
   .rules div{
     padding:9px 11px;border-radius:10px;background:rgba(255,255,255,.035);
@@ -134,9 +134,9 @@
   }
   .btn.danger{
     background:linear-gradient(180deg,#f07266,#c9453a 60%,#9d3027);color:#fff6f4;
-    box-shadow:0 8px 22px rgba(226,86,74,.28), inset 0 1px 0 rgba(255,255,255,.25);
+    box-shadow:0 8px 22px rgba(190,35,38,.28), inset 0 1px 0 rgba(255,255,255,.25);
   }
-  .btn.danger:hover{box-shadow:0 12px 28px rgba(226,86,74,.38), inset 0 1px 0 rgba(255,255,255,.25)}
+  .btn.danger:hover{box-shadow:0 12px 28px rgba(190,35,38,.38), inset 0 1px 0 rgba(255,255,255,.25)}
   .btnrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
   .skins-title{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;text-align:center}
   .skins-title span{color:var(--amber);letter-spacing:.04em;text-transform:none}
@@ -151,8 +151,8 @@
   }
   .skinbtn:hover{background:rgba(255,255,255,.07);transform:translateY(-1px)}
   .skinbtn.sel{
-    border-color:rgba(242,164,65,.7);background:rgba(242,164,65,.12);
-    color:var(--amber-2);box-shadow:inset 0 0 0 1px rgba(242,164,65,.25);
+    border-color:rgba(1,153,219,.7);background:rgba(1,153,219,.12);
+    color:var(--amber-2);box-shadow:inset 0 0 0 1px rgba(1,153,219,.25);
   }
   .skinbtn canvas{display:block;border-radius:8px}
   .citygrid{
@@ -167,7 +167,7 @@
     color:var(--text);
     transition:border-color .14s, background .14s, transform .1s;
   }
-  .citybtn:hover{border-color:rgba(242,164,65,.5);background:rgba(242,164,65,.1);transform:translateY(-1px)}
+  .citybtn:hover{border-color:rgba(1,153,219,.5);background:rgba(1,153,219,.1);transform:translateY(-1px)}
   .citybtn b{font-size:14px;font-weight:600;line-height:1.2}
   .citybtn small{font-size:11.5px;color:var(--muted)}
   .citybtn small em{color:var(--amber);font-style:normal}
@@ -185,22 +185,22 @@
   .skin-desc{
     margin:0 0 18px;padding:11px 13px;border-radius:11px;text-align:left;
     background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
-    font-size:13px;line-height:1.5;color:#cfc4b2;
+    font-size:13px;line-height:1.5;color:var(--muted);
   }
   .skin-desc .who{color:var(--amber-2);font-weight:700;letter-spacing:.02em}
   .skin-desc .bio{display:block;margin-top:3px}
   .qsource{font-size:11.5px;color:var(--muted);margin:-8px 0 14px;text-align:center}
-  .qsource.warn{color:#d9a25c}
+  .qsource.warn{color:var(--danger)}
   .ans .mark{display:inline-block;min-width:1.15em;font-weight:700}
   .ans .mark.ok{color:var(--good)}
-  .ans .mark.bad{color:#ff8b7d}
+  .ans .mark.bad{color:var(--danger)}
   .skin-desc .say{
     display:block;margin-top:7px;padding-left:9px;color:var(--muted);font-style:italic;
-    border-left:2px solid rgba(242,164,65,.35);
+    border-left:2px solid rgba(1,153,219,.35);
   }
   .qspeak{
-    margin-top:8px;padding-left:9px;font-style:italic;color:#ffe0b0;
-    border-left:2px solid rgba(242,164,65,.45);
+    margin-top:8px;padding-left:9px;font-style:italic;color:var(--primary-hover);
+    border-left:2px solid rgba(1,153,219,.45);
   }
 
   /* ---------- Question modal ---------- */
@@ -218,21 +218,21 @@
     border:1px solid rgba(255,255,255,.10);
     transition:background .12s, border-color .12s, color .12s, transform .1s;
   }
-  .qclose:hover{background:rgba(226,86,74,.14);border-color:rgba(226,86,74,.45);color:#ffd0c9;transform:translateY(-1px)}
+  .qclose:hover{background:rgba(190,35,38,.14);border-color:rgba(190,35,38,.45);color:var(--danger);transform:translateY(-1px)}
   .qclose:active{transform:translateY(1px)}
   .qclose.hidden{display:none!important}
   .qprog{display:flex;gap:6px}
   .qprog span{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.14);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
-  .qprog span.on{background:var(--amber);box-shadow:0 0 10px rgba(242,164,65,.7)}
-  .qprog span.now{background:rgba(242,164,65,.35);box-shadow:inset 0 0 0 1px var(--amber)}
+  .qprog span.on{background:var(--amber);box-shadow:0 0 10px rgba(1,153,219,.7)}
+  .qprog span.now{background:rgba(1,153,219,.35);box-shadow:inset 0 0 0 1px var(--amber)}
   .qtag{
     display:inline-flex;align-items:center;gap:7px;
     font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);
     margin-bottom:10px;
   }
   .qtag i{width:7px;height:7px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber);display:block}
-  .qtag.hard{color:#b992ff}
-  .qtag.hard i{background:#b992ff;box-shadow:0 0 12px #b992ff}
+  .qtag.hard{color:var(--danger)}
+  .qtag.hard i{background:var(--danger);box-shadow:0 0 12px var(--danger)}
   #qText{font-size:clamp(17px,2.4vw,21px);line-height:1.45;margin:0 0 18px;font-weight:600}
   #qAnswers{display:grid;gap:9px}
   #qAnswers.tf{grid-template-columns:1fr 1fr}
@@ -245,26 +245,26 @@
     border:1px solid rgba(255,255,255,.08);
     transition:background .14s, border-color .14s, transform .1s;
   }
-  .ans:hover:not(:disabled){background:rgba(255,255,255,.09);border-color:rgba(242,164,65,.45)}
+  .ans:hover:not(:disabled){background:rgba(255,255,255,.09);border-color:rgba(1,153,219,.45)}
   .ans:disabled{cursor:default}
-  .ans.correct{background:rgba(95,208,138,.16);border-color:var(--good);color:#c6f7d9;box-shadow:0 0 0 1px rgba(95,208,138,.35) inset}
-  .ans.wrong{background:rgba(226,86,74,.16);border-color:var(--danger);color:#ffc9c3}
+  .ans.correct{background:rgba(22,163,74,.16);border-color:var(--good);color:var(--good);box-shadow:0 0 0 1px rgba(22,163,74,.35) inset}
+  .ans.wrong{background:rgba(190,35,38,.16);border-color:var(--danger);color:var(--danger)}
   .ans.removed{opacity:.22;pointer-events:none;text-decoration:line-through}
   .hintbtn{
     appearance:none;cursor:pointer;margin-top:10px;
     font-family:inherit;font-size:12.5px;color:var(--amber-2);
     padding:8px 12px;border-radius:9px;
-    background:rgba(242,164,65,.08);
-    border:1px dashed rgba(242,164,65,.35);
+    background:rgba(1,153,219,.08);
+    border:1px dashed rgba(1,153,219,.35);
     transition:background .14s, opacity .14s;
   }
-  .hintbtn:hover:not(:disabled){background:rgba(242,164,65,.16)}
+  .hintbtn:hover:not(:disabled){background:rgba(1,153,219,.16)}
   .hintbtn:disabled{opacity:.4;cursor:default;text-decoration:none}
   .hintbtn[hidden]{display:none!important}
-  .qfact{margin-top:7px;font-size:13px;color:#d8cdbb;opacity:.95}
+  .qfact{margin-top:7px;font-size:13px;color:var(--muted);opacity:.95}
   .qfeedback{margin-top:12px;padding:11px 13px;border-radius:10px;font-size:14px;line-height:1.45}
-  .qfeedback.ok{background:rgba(95,208,138,.12);border:1px solid rgba(95,208,138,.35);color:#c9f6da}
-  .qfeedback.bad{background:rgba(226,86,74,.12);border:1px solid rgba(226,86,74,.35);color:#ffd0c9}
+  .qfeedback.ok{background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.35);color:var(--good)}
+  .qfeedback.bad{background:rgba(190,35,38,.12);border:1px solid rgba(190,35,38,.35);color:var(--danger)}
   #qFeedback.hidden,#qNextBtn.hidden,#qExitConfirm.hidden{display:none!important}
   .qnext{margin-top:12px;width:100%}
   .qconfirm{
@@ -274,24 +274,24 @@
   }
   .qconfirm-box{
     width:100%;max-width:400px;padding:20px 22px;border-radius:14px;
-    background:rgba(27,21,17,.98);border:1px solid rgba(226,86,74,.38);
+    background:rgba(27,21,17,.98);border:1px solid rgba(190,35,38,.38);
     box-shadow:0 18px 46px rgba(0,0,0,.6);text-align:center;
   }
   .qconfirm-title{margin:0 0 8px;font-size:18px;font-weight:700;color:var(--text)}
   .qconfirm-text{margin:0 0 18px;font-size:14.5px;line-height:1.5;color:var(--muted)}
-  .qconfirm-text b{color:#ff9e94;font-weight:700}
+  .qconfirm-text b{color:var(--danger);font-weight:700}
   .sliderWrap{padding:4px 2px 8px}
   .sliderVal{text-align:center;font-size:28px;font-weight:700;color:var(--amber-2);margin-bottom:12px;letter-spacing:.01em}
   .sliderVal span{font-size:14px;color:var(--muted);font-weight:400;margin-left:3px}
   .sliderWrap input[type=range]{
     -webkit-appearance:none;appearance:none;width:100%;height:7px;border-radius:99px;
-    background:linear-gradient(90deg, rgba(242,164,65,.55), rgba(255,255,255,.12));
+    background:linear-gradient(90deg, rgba(1,153,219,.55), rgba(255,255,255,.12));
     outline:none;margin:0;
   }
   .sliderWrap input[type=range]::-webkit-slider-thumb{
     -webkit-appearance:none;width:24px;height:24px;border-radius:50%;
     background:linear-gradient(180deg,#ffd08a,#e59a35);
-    border:2px solid #4a3415;box-shadow:0 2px 12px rgba(242,164,65,.55);cursor:pointer;
+    border:2px solid #4a3415;box-shadow:0 2px 12px rgba(1,153,219,.55);cursor:pointer;
   }
   .sliderWrap input[type=range]::-moz-range-thumb{
     width:20px;height:20px;border-radius:50%;background:#e59a35;
@@ -305,7 +305,7 @@
   #toast{
     position:absolute;left:50%;bottom:16px;transform:translate(-50%,14px);
     padding:9px 16px;border-radius:99px;font-size:13px;line-height:1.4;
-    background:rgba(12,9,7,.92);border:1px solid rgba(242,164,65,.32);
+    background:rgba(12,9,7,.92);border:1px solid rgba(1,153,219,.32);
     color:var(--amber-2);white-space:nowrap;opacity:0;pointer-events:none;
     transition:opacity .22s, transform .22s;z-index:7;
     box-shadow:0 10px 26px rgba(0,0,0,.6);
@@ -317,7 +317,7 @@
   .hint{font-size:12.5px;color:var(--muted);line-height:1.6}
   .hint kbd{
     display:inline-block;padding:1px 6px;border-radius:5px;font-family:inherit;font-size:11.5px;
-    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#d7cbb8;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text);
   }
   .dpad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,44px);gap:6px}
   .dpad button{
@@ -329,7 +329,7 @@
     transition:background .12s, transform .08s;
     user-select:none;touch-action:none;
   }
-  .dpad button:active{background:rgba(242,164,65,.25);transform:scale(.95)}
+  .dpad button:active{background:rgba(1,153,219,.25);transform:scale(.95)}
   .dpad .u{grid-column:2;grid-row:1}
   .dpad .l{grid-column:1;grid-row:2}
   .dpad .d{grid-column:2;grid-row:2}
@@ -369,14 +369,14 @@
   }
   /* Подключение к комнате в существующей цветовой схеме. */
   .room-join{display:flex;gap:8px;margin:14px 0 0;flex-wrap:wrap;justify-content:center}
-  .room-join input{font:inherit;min-width:0;width:130px;min-height:44px;text-align:center;text-transform:uppercase;color:var(--text);background:#0a0908;border:1px solid var(--edge);border-radius:9px;padding:8px}
+  .room-join input{font:inherit;min-width:0;width:130px;min-height:44px;text-align:center;text-transform:uppercase;color:var(--text);background:var(--panel);border:1px solid var(--edge);border-radius:9px;padding:8px}
   .room-join .btn{padding:10px 14px;font-size:13px;min-height:44px}
   #netBar{flex:none;display:flex;align-items:center;gap:8px;line-height:1.4;padding:5px 9px;background:var(--panel);border:1px solid var(--edge);border-radius:9px;font-size:12px}
   #netBar[hidden],#netCover[hidden]{display:none}
   #netStatus{flex:1;min-width:0;overflow-wrap:anywhere;color:var(--amber-2)}
   #netLeave{min-height:36px;padding:7px 10px;font-size:12px}
   #netCover{position:absolute;inset:0;z-index:10;background:rgba(8,7,6,.94);display:flex;flex-direction:column;gap:18px;align-items:center;justify-content:center;text-align:center;line-height:1.5;padding:20px;color:var(--amber-2)}
-  #netError{color:#ffb1a8;font-size:13px;line-height:1.4;margin:8px 0 0;overflow-wrap:anywhere}
+  #netError{color:var(--danger);font-size:13px;line-height:1.4;margin:8px 0 0;overflow-wrap:anywhere}
   #netLobby{position:absolute;inset:0;z-index:9;display:flex;align-items:safe center;justify-content:center;overflow-y:auto;padding:12px;text-align:center;line-height:1.5;background:rgba(8,7,6,.97)}
   #netLobby[hidden]{display:none}
   #netLobby h1{font-size:28px}#lobbyCode{font-size:24px;letter-spacing:.12em;color:var(--amber-2)}
@@ -393,6 +393,94 @@
     .qnext{position:sticky;bottom:0;min-height:44px}.btn{min-height:44px}.citygrid{grid-template-columns:repeat(2,minmax(0,1fr))}
     .qsource{margin:0 0 8px}.room-join{margin-top:10px}#toast{max-width:calc(100% - 16px);white-space:normal;text-align:center}
   }
+
+/* ????: existing expedition layout with the college palette. */
+
+body{background:var(--page);font-family:Arial,"Segoe UI",sans-serif;padding:14px}
+#app{width:min(1180px,100%);gap:10px}
+.hud{border-radius:2px;background:var(--panel);box-shadow:none;padding:12px;gap:6px;border-top:3px solid var(--amber)}
+.brand{font-size:12px;letter-spacing:.07em}.brand span{display:block;font-size:10px;margin-top:3px}
+.stat{background:none;border:0;border-left:1px solid var(--edge);border-radius:0;font-size:10px;padding:4px 9px}
+.stat b,.meter,#lobbyCode{font-family:Consolas,monospace;font-variant-numeric:tabular-nums}
+.meter{border-radius:0;height:6px;box-shadow:none}#fuelBar{background:var(--amber)}#hpBar{background:#8bb998}
+#stage{border-radius:2px;box-shadow:none;border-color:var(--edge)}
+.screen{background:rgba(23,27,26,.97);backdrop-filter:none;padding:24px}
+.card{background:var(--panel);border-radius:2px;border:1px solid var(--edge);box-shadow:none;padding:28px;text-align:left}
+h1{font-family:Georgia,"Times New Roman",serif;font-weight:normal;letter-spacing:-.035em;color:var(--text);background:none;text-shadow:none;font-size:40px}
+.sub{line-height:1.6;color:var(--muted)}
+.btn,.btn:hover{background:var(--amber);color:var(--panel);border:1px solid var(--amber);border-radius:2px;box-shadow:none;filter:none;letter-spacing:0}
+.btn:hover{background:var(--primary-hover)}.btn.ghost{background:transparent;border-color:var(--edge);box-shadow:none;color:var(--text)}
+.btn.danger,.btn.danger:hover{background:var(--danger);border-color:var(--danger);color:#fff;box-shadow:none}
+.rules{gap:0;counter-reset:rule}.rules div{border:0;border-top:1px solid var(--edge);border-radius:0;background:none;padding:12px 12px 12px 0}
+.rules b{font-size:10px;letter-spacing:.1em;color:var(--amber-2)}
+.rules b:before{counter-increment:rule;content:"0" counter(rule) " / ";color:var(--muted)}
+.skinbtn,.citybtn,.ans,.hintbtn,.qclose,.qconfirm-box,.skin-desc,#netBar,#toast,.dpad button{border-radius:2px;box-shadow:none;background-color:var(--panel)}
+.skinbtn{padding:8px;min-width:60px}.skinbtn.sel{border-color:var(--amber);background:var(--primary-soft);box-shadow:none}
+.skins-title{text-align:left;letter-spacing:.08em}.skins{justify-content:flex-start}.skin-desc{border-left:2px solid var(--amber);text-align:left}
+.room-join{justify-content:flex-start}.room-join input{border-radius:2px;background:var(--page);font-family:Consolas,monospace;letter-spacing:.1em;flex:1;min-width:120px}
+.room-join input:focus{outline:2px solid var(--amber);outline-offset:3px}
+button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
+#netLobby{background:var(--page)}.dpad button{background:var(--panel)}.hint{font-size:11px}
+#startScreen .card{max-width:940px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);padding:0;overflow:hidden;flex-shrink:0}
+.entry-intro{padding:36px;background:var(--primary-soft);color:var(--text);border-right:1px solid var(--edge)}
+.entry-intro h1{color:var(--text);font-size:clamp(40px,5vw,64px);line-height:.98;margin:24px 0}
+.entry-intro .sub{color:var(--muted);font-size:14px}.entry-intro .rules{margin-bottom:0;color:var(--muted);grid-template-columns:1fr 1fr;font-size:12px}
+.entry-intro .rules div{border-color:var(--edge)}.entry-intro .rules b{color:var(--primary-hover)}.entry-intro .rules b:before{color:var(--brand-gray)}
+.expedition-label{font:11px Consolas,monospace;letter-spacing:.14em;text-transform:uppercase;display:flex;justify-content:space-between;border-bottom:1px solid var(--edge);padding-bottom:12px}
+.entry-setup{padding:32px;align-self:center}.entry-setup h2{font-size:20px;font-weight:normal;margin:0 0 24px}
+.entry-caption{font:10px Consolas,monospace;text-transform:uppercase;letter-spacing:.12em;color:var(--amber);margin-bottom:10px}
+.entry-setup .qsource{text-align:left}.entry-setup .room-join .btn{flex:1;white-space:nowrap}
+@media(max-width:700px){body{padding:max(6px,env(safe-area-inset-top)) 6px max(6px,env(safe-area-inset-bottom))}.screen{padding:10px}#startScreen .card{display:block;max-width:470px}.entry-intro{padding:20px;border-right:0;border-bottom:1px solid var(--edge)}.entry-intro h1{font-size:42px;margin:16px 0}.entry-intro .sub{font-size:12px;margin-bottom:12px}.entry-intro .rules div{padding:8px 8px 8px 0}.entry-setup{padding:20px}.entry-setup h2{margin-bottom:16px}.hud{padding:7px}.stat{padding:3px 6px}.brand span{display:none}.card{padding:18px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+@media(max-width:700px){
+  #startScreen .card{display:flex;flex-direction:column}
+  .entry-setup{order:-1;width:100%;min-width:0}
+  .entry-intro{border-bottom:0;border-top:1px solid var(--edge)}
+}
+
+
+/* Shared surfaces and interaction states. Canvas artwork keeps its original palette. */
+body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+h1{font-family:inherit;font-weight:700;line-height:1.12}
+.hud{border-radius:14px;box-shadow:var(--shadow)}
+#stage{border-radius:16px}
+.card{border-radius:16px;box-shadow:var(--shadow)}
+.screen{background:rgb(244 247 250 / 94%)}
+.entry-intro h1{color:var(--text)}
+.entry-setup h2{font-weight:650}
+.skinbtn,.citybtn,.ans,.hintbtn,.qclose,.qconfirm-box,.skin-desc,#netBar,#toast,.dpad button,.room-join input{border-radius:12px}
+.btn,.btn:hover{border-radius:12px;background:var(--primary);border-color:var(--primary);color:var(--panel)}
+.btn:hover{background:var(--primary-hover);border-color:var(--primary-hover)}
+.btn.ghost{background:var(--panel);color:var(--text);border-color:var(--edge)}
+.btn.ghost:hover{background:var(--primary-soft);border-color:var(--primary)}
+.btn.danger{background:var(--danger);border-color:var(--danger)}
+.btn.danger:hover{background:var(--danger-hover);border-color:var(--danger-hover)}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.skinbtn,.citybtn,.ans,.qclose,.dpad button{border-color:var(--edge);background:var(--panel)}
+.skinbtn:hover,.citybtn:hover,.ans:hover:not(:disabled){background:var(--primary-soft);border-color:var(--primary)}
+.skinbtn.sel{background:var(--primary-soft)}
+.skin-desc{background:var(--page);border-color:var(--edge);border-left-color:var(--primary)}
+.qspeak,.skin-desc .say{border-left-color:var(--primary)}
+.qclose:hover{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}
+.qprog span{background:var(--edge);box-shadow:none}
+.qprog span.on{background:var(--primary);box-shadow:none}
+.qprog span.now{background:var(--primary-soft);box-shadow:inset 0 0 0 1px var(--primary)}
+.qtag i,.qtag.hard i{box-shadow:none}
+.ans.correct,.qfeedback.ok{background:var(--success-soft);color:var(--good);border-color:var(--good);box-shadow:none}
+.ans.wrong,.qfeedback.bad{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}
+.hintbtn{color:var(--primary-hover);border-color:var(--primary);background:var(--primary-soft)}
+.qconfirm{background:rgb(244 247 250 / 95%)}
+.qconfirm-box{background:var(--panel);border-color:var(--edge);box-shadow:var(--shadow)}
+.sliderWrap input[type=range]{background:var(--primary-soft);accent-color:var(--primary)}
+.sliderWrap input[type=range]::-webkit-slider-thumb{background:var(--primary);border-color:var(--primary-hover);box-shadow:none}
+.sliderWrap input[type=range]::-moz-range-thumb{background:var(--primary);border-color:var(--primary-hover)}
+.meter{background:var(--edge);border-radius:99px}
+#fuelBar{background:var(--primary)}#hpBar{background:var(--good)}
+.meter.low i{background:var(--danger)!important}
+.hint kbd{background:var(--panel);color:var(--text);border-color:var(--edge)}
+#netLobby,#netCover{background:rgb(244 247 250 / 98%)}
+#toast{background:var(--panel);border-color:var(--edge);box-shadow:var(--shadow)}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--primary);outline-offset:3px}
 </style>
 </head>
 <body>
@@ -414,7 +502,7 @@
 
     <div class="screen" id="startScreen">
       <div class="card">
-        <h1>Шахта Знаний</h1>
+        <section class="entry-intro"><div class="expedition-label"><span>СОТА / Экспедиция</span><span>01—03</span></div><h1>Шахта<br>знаний.</h1>
         <p class="sub">Спускайтесь в забой, собирайте кристаллы и отвечайте на вопросы о недрах. Цель — СОТА, Смоленская областная технологическая академия: чем дальше ваш город, тем больше шахт. Встречаются фиолетовые алмазы: вопрос сложнее, награда выше.</p>
         <div class="rules">
           <div><b>Ходьба</b>Тап по клетке, <kbd>WASD</kbd> / <kbd>←↑↓→</kbd> или крестовина</div>
@@ -422,16 +510,18 @@
           <div><b>Алмаз</b>Фиолетовый кристалл: сложный вопрос, двойные очки</div>
           <div><b>Проигрыш</b>Свет погас или силы на нуле</div>
         </div>
-        <div class="skins-title">Скины <span>· бесплатно</span></div>
+        </section><section class="entry-setup"><div class="entry-caption">Перед спуском</div><h2>Кто идёт в экспедицию?</h2><div class="skins-title">Выберите персонажа</div>
         <div class="skins" id="skinRow"></div>
         <div class="skin-desc" id="skinDesc"></div>
         <div class="qsource" id="qSource">вопросы загружаются…</div>
+        <button class="btn" id="playLocal" type="button">Играть</button>
+        <p class="qsource">Одиночная игра без кода комнаты.</p>
         <form class="room-join" id="roomJoin">
           <input id="roomCode" aria-label="Код комнаты" placeholder="Код комнаты" maxlength="5" autocomplete="off" autocapitalize="characters" required pattern="[A-Za-z2-9]{5}">
           <button class="btn" id="startBtn" type="submit">Войти в комнату</button>
         </form>
         <p class="qsource" style="margin:8px 0 0">Введите код от организатора. Игра начнётся для всей группы одновременно.</p>
-        <p id="netError" role="alert"></p>
+        <p id="netError" role="alert"></p></section>
       </div>
     </div>
 
@@ -509,7 +599,7 @@
   </div>
 </div>
 
-<script src="/network.js"></script>
+<script src="./public/network.js"></script>
 <script>
 (function(){
   'use strict';
@@ -1683,6 +1773,19 @@
   }
   el('netLeave').addEventListener('click', leaveToMenu); el('netCancel').addEventListener('click', leaveToMenu);
   el('lobbyLeave').addEventListener('click', leaveToMenu);
+  el('playLocal').addEventListener('click', () => {
+    leaveNetwork();
+    chosenCity = CITIES[0]; startKm = chosenCity.km; totalMines = minesFor(startKm);
+    depth = 1; completedMines = 0; runOre = 0; score = 0; answerStreak = 0;
+    fuel = 100; hp = 100; particles = []; speech = null; shake = 0; flash = 0;
+    activeQuestion = null; activeCrystal = null; answerLock = false;
+    decks.easy = []; decks.hard = [];
+    ['startScreen','qScreen','endScreen','qExitConfirm'].forEach(id => el(id).classList.add('hidden'));
+    el('netError').textContent = '';
+    el('netBar').hidden = false; el('netStatus').textContent = 'Одиночная игра';
+    state = 'playing'; newLevel(); resizeCanvas(); updateHUD();
+    el('playLocal').blur();
+  });
   el('roomJoin').addEventListener('submit', event => {
     event.preventDefault(); const code = el('roomCode').value.trim().toUpperCase();
     if (!/^[A-Z2-9]{5}$/.test(code)){ el('netError').textContent = 'Введите код комнаты из пяти символов'; return; }
