@@ -46,12 +46,13 @@
         tr.dataset.code = room.code;
         for (const value of [room.code, room.city, room.finished ? 'Завершена' : room.started ? 'Игра · шахта ' + room.level : 'Ожидание старта']) { const td = document.createElement('td'); td.textContent = value; tr.appendChild(td); }
         tr.firstElementChild.className = 'code';
-        const players = document.createElement('td'); players.textContent = 'Онлайн: ' + room.players + '/16';
+        const players = document.createElement('td'); players.textContent = 'Онлайн: ' + room.players + '/60';
         const roster = document.createElement('ul'); roster.className = 'roster';
         room.roster.forEach(player => { const li = document.createElement('li'); li.textContent = player.name + ' · ' + ['Шахтёр','Гном','Инженер'][player.skin] + (player.connected ? '' : ' · нет связи'); roster.appendChild(li); });
         players.appendChild(roster); tr.appendChild(players);
         const td = document.createElement('td'), launch = document.createElement('button'), button = document.createElement('button');
         launch.textContent = room.started ? 'Игра началась' : 'Начать игру'; launch.dataset.action = 'start'; launch.disabled = room.started || room.finished || !room.players || starting.has(room.code); launch.onclick = () => start(room.code); td.appendChild(launch);
+        const snake=document.createElement('button');snake.textContent='Алмазная змейка';snake.disabled=!room.started||room.finished;snake.onclick=async()=>{try{await request('/api/admin/snake',{method:'POST',body:JSON.stringify({code:room.code})})}catch(e){el('error').textContent=e.message}};td.appendChild(snake);
         button.textContent = 'Завершить'; button.className = 'danger'; button.onclick = () => end(room.code); td.appendChild(button); tr.appendChild(td); el('rooms').appendChild(tr);
       }
     } catch (error) { el('error').textContent = error.message; el('status').textContent = 'Нет связи с сервером'; }

@@ -19,6 +19,23 @@ async function peer(url: string) {
       throw new Error('Не получено сообщение: ' + type);
     } };
 }
+test('все скрипты игры доступны по адресам из HTML, модули цеха используют общий assets-маршрут', async () => {
+  const app = createApp(); app.server.listen(0, '127.0.0.1'); await once(app.server, 'listening');
+  const base = `http://127.0.0.1:${(app.server.address() as {port:number}).port}/`;
+  try {
+    const html = await (await fetch(base)).text();
+    const scripts = [...html.matchAll(/<script\s+src="([^"]+)"/g)].map(m => m[1]);
+    assert.ok(scripts.includes('./assets/factory.js'));
+    assert.ok(scripts.includes('./assets/factory-render.js'));
+    for (const src of scripts) {
+      const response = await fetch(new URL(src, base));
+      assert.equal(response.status, 200, src);
+      assert.match(response.headers.get('content-type') || '', /javascript/, src);
+      assert.ok((await response.text()).length > 0, src);
+    }
+  } finally { await app.close(); }
+});
+
 test('HTTP, WebSocket, изоляция админки, восстановление и завершение сессии', async () => {
   const app = createApp(); app.server.listen(0, '127.0.0.1'); await once(app.server, 'listening');
   const address = app.server.address() as { port: number }; const base = `http://127.0.0.1:${address.port}`;

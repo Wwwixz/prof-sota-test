@@ -12,7 +12,7 @@ const questionSchema = z.object({ q: z.string(), a: z.array(z.string()).optional
 export type Question = z.infer<typeof questionSchema>;
 type Pending = { id: string; index: number; q: Question; answered: boolean; hint: number[]; result?: { ok: boolean; accuracy: number; value: number } };
 export type Player = Cell & { id: string; token: string; skin: number; name: string; dir: number; ack: number; score: number; fuel: number; hp: number; streak: number;
-  state: 'waiting' | 'playing' | 'question' | 'dead' | 'won'; reason: string; connected: boolean; disconnectedAt: number; lastTick: number; lastMove: number; pending?: Pending;
+  snake?: boolean; snakeResult?: any; state: 'waiting' | 'playing' | 'question' | 'dead' | 'won'; reason: string; connected: boolean; disconnectedAt: number; lastTick: number; lastMove: number; pending?: Pending;
   decks: { easy: number[]; hard: number[] } };
 export type Room = { code: string; cityIndex: number; level: number; totalMines: number; runOre: number; started: boolean; finished: boolean; world: World; players: Map<string, Player>; touched: number };
 export type Identity = { room: Room; player: Player };
@@ -54,7 +54,7 @@ export class Game {
     return this.add(room, skin);
   }
   private add(room: Room, skin: number): Identity {
-    if (room.players.size >= 16 || this.tokens.size >= 120) throw new GameError('В комнате нет свободных мест');
+    if (room.players.size >= require('../../assets/snake-config.js').maxPlayers || this.tokens.size >= 120) throw new GameError('В комнате нет свободных мест');
     const number = Math.max(0, ...[...room.players.values()].map(p => Number(p.name.split(' ')[1]))) + 1;
     const player: Player = { ...room.world.start, id: randomUUID(), token: randomUUID(), skin, name: `Игрок ${number}`, dir: 1, ack: 0,
       score: 0, fuel: 100, hp: 100, streak: 0, state: room.started ? 'playing' : 'waiting', reason: '', connected: true, disconnectedAt: 0,
@@ -86,7 +86,7 @@ export class Game {
     for (const room of this.rooms.values()) {
       for (const player of room.players.values()) {
         const dt = Math.max(0, (now - player.lastTick) / 1000); player.lastTick = now;
-        if (player.connected && player.state === 'playing') {
+        if (player.connected && player.state === 'playing' && !player.snake) {
           player.fuel = clamp(player.fuel - dt * 1.05);
           if (!player.fuel) this.die(room, player, 'Фонарь погас, и шахта сомкнулась.');
         }
@@ -117,6 +117,7 @@ export class Game {
     if (!this.rooms.has(room.code)) throw new GameError('Сессия завершена организатором');
     if (!room.started) throw new GameError('Игра ещё не началась. Ожидайте организатора.');
     room.touched = this.now();
+    if(p.snake) throw new GameError('Сначала вернитесь из мини-игры');
     if ('level' in m && m.level !== room.level) throw new GameError('Шахта сменилась. Состояние обновлено.');
     if (p.state === 'dead' || p.state === 'won') throw new GameError('Поход для вас завершён');
     if (m.type === 'move') {
@@ -170,6 +171,7 @@ export class Game {
   }
   private collected(room: Room): number { return room.world.crystals.filter(c => c.done).length; }
   private advance(room: Room): void {
+    if([...room.players.values()].some(p=>p.snake))throw new GameError('Дождитесь завершения мини-игры');
     for (const p of room.players.values()) {
       if (p.state === 'dead') continue;
       if (p.hp <= 0 || p.fuel <= 0) { this.die(room, p, p.hp <= 0 ? 'Силы покинули вас в темноте.' : 'Фонарь погас, и шахта сомкнулась.'); continue; }
@@ -185,11 +187,12 @@ export class Game {
     }
   }
   snapshot({ room, player: p }: Identity) {
+    require('../../assets/snake-engine.js').terminal(room.world);
     const pending = p.pending;
     return { type: 'state', code: room.code, started: room.started, city: CITIES[room.cityIndex], level: room.level, totalMines: room.totalMines,
       runOre: room.runOre, collected: this.collected(room), finished: room.finished, world: room.world,
       players: [...room.players.values()].map(({ id, name, skin, x, y, dir, connected, state }) => ({ id, name, skin, x, y, dir, connected, state })),
-      me: { id: p.id, x: p.x, y: p.y, dir: p.dir, ack: p.ack, score: p.score, fuel: p.fuel, hp: p.hp, streak: p.streak, state: p.state, reason: p.reason,
+      me: { snake: !!p.snake, id: p.id, x: p.x, y: p.y, dir: p.dir, ack: p.ack, score: p.score, fuel: p.fuel, hp: p.hp, streak: p.streak, state: p.state, reason: p.reason,
         pending: pending && { id: pending.id, index: pending.index, answered: pending.answered, hint: pending.hint, result: pending.result,
           question: pending.answered ? pending.q : { ...pending.q, c: undefined, answer: undefined, fact: undefined } } } };
   }

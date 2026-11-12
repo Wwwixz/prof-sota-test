@@ -1,5 +1,9 @@
 import { z } from 'zod';
 export const messageSchema = z.discriminatedUnion('type', [
+  z.object({type:z.literal('snake_invite')}).strict(),
+  z.object({type:z.literal('snake_join'),roundId:z.string().uuid()}).strict(),
+  z.object({type:z.literal('snake_leave'),roundId:z.string().uuid()}).strict(),
+  z.object({type:z.literal('snake_input'),roundId:z.string().uuid(),angle:z.number().finite().min(-100).max(100)}).strict(),
   z.object({ type: z.literal('join'), code: z.string().regex(/^[A-Z2-9]{5}$/), skin: z.number().int().min(0).max(2) }).strict(),
   z.object({ type: z.literal('resume'), token: z.string().uuid() }).strict(),
   z.object({ type: z.literal('move'), level: z.number().int().positive(), seq: z.number().int().min(1).max(1000000000), dx: z.number().int().min(-1).max(1), dy: z.number().int().min(-1).max(1) }).strict(),

@@ -1,9 +1,11 @@
 export const W = 23, H = 15;
 export type Cell = { x: number; y: number };
-export type Crystal = Cell & { done: boolean; cracked: boolean; hard: boolean; seed: number; owner?: string };
+export type EquipmentKind = 'saw' | 'cut' | 'polish' | 'lab' | 'computer' | 'conveyor';
+export type Crystal = Cell & { done: boolean; cracked: boolean; hard: boolean; seed: number; owner?: string; kind?: EquipmentKind; machine?: Cell };
 export type Pickup = Cell & { type: 'oil' | 'med'; seed: number };
 export type World = { map: number[][]; start: Cell; exitCell: Cell; crystals: Crystal[]; pickups: Pickup[]; needed: number };
 export const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+const factory: { arrange(world: World, depth: number): World } = require('../../assets/factory.js');
 export function shuffle<T>(values: T[]): T[] {
   const result = [...values];
   for (let i = result.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [result[i], result[j]] = [result[j], result[i]]; }
@@ -67,5 +69,5 @@ export function generateWorld(depth: number): World {
   const free = shuffle(floors.filter(c => !crystals.some(p => p.x === c.x && p.y === c.y) &&
     (c.x !== start.x || c.y !== start.y) && (c.x !== far.x || c.y !== far.y)));
   const pickups: Pickup[] = free.slice(0, 2 + (depth > 2 ? 1 : 0)).map((c, i) => ({ ...c, type: i % 2 ? 'med' : 'oil', seed: Math.random() * 10 }));
-  return { map, start, exitCell: far, crystals, pickups, needed };
+  return factory.arrange({ map, start, exitCell: far, crystals, pickups, needed }, depth);
 }

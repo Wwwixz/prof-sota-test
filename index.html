@@ -6,12 +6,12 @@
 <title>Шахта Знаний — игра</title>
 <style>
 :root{
-  color-scheme:light;
-  --primary:#0199DB;--primary-hover:#007DB5;--primary-soft:#E3F3FC;
-  --danger:#BE2326;--danger-hover:#A91C20;--brand-gray:#979797;
-  --page:#F4F7FA;--panel:#FFFFFF;--text:#18232F;--muted:#64748B;
-  --edge:#E2E8F0;--good:#16A34A;
-  --success-soft:#EDF8F0;--danger-soft:#FBEFF0;
+  color-scheme:dark;
+  --primary:#C99A4A;--primary-hover:#F4B942;--primary-soft:#22201D;
+  --danger:#EF5350;--danger-hover:#F57770;--brand-gray:#979797;
+  --page:#101114;--panel:#181A1E;--text:#F0EDE7;--muted:#A39D92;
+  --edge:#39352E;--good:#4ADE80;
+  --success-soft:#142B20;--danger-soft:#321C1D;
   --shadow:0 4px 18px rgb(24 35 47 / 5%);
 }
 :root{--amber:var(--primary);--amber-2:var(--primary-hover);--amber-dim:var(--primary-hover);--ink:var(--page)}
@@ -439,13 +439,13 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(
 }
 
 
-/* Shared surfaces and interaction states. Canvas artwork keeps its original palette. */
+/* Obsidian Gold surfaces and interaction states. */
 body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
 h1{font-family:inherit;font-weight:700;line-height:1.12}
 .hud{border-radius:14px;box-shadow:var(--shadow)}
 #stage{border-radius:16px}
 .card{border-radius:16px;box-shadow:var(--shadow)}
-.screen{background:rgb(244 247 250 / 94%)}
+.screen{background:rgb(8 9 12 / 76%)}
 .entry-intro h1{color:var(--text)}
 .entry-setup h2{font-weight:650}
 .skinbtn,.citybtn,.ans,.hintbtn,.qclose,.qconfirm-box,.skin-desc,#netBar,#toast,.dpad button,.room-join input{border-radius:12px}
@@ -469,7 +469,7 @@ h1{font-family:inherit;font-weight:700;line-height:1.12}
 .ans.correct,.qfeedback.ok{background:var(--success-soft);color:var(--good);border-color:var(--good);box-shadow:none}
 .ans.wrong,.qfeedback.bad{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}
 .hintbtn{color:var(--primary-hover);border-color:var(--primary);background:var(--primary-soft)}
-.qconfirm{background:rgb(244 247 250 / 95%)}
+.qconfirm{background:rgb(10 11 14 / 95%)}
 .qconfirm-box{background:var(--panel);border-color:var(--edge);box-shadow:var(--shadow)}
 .sliderWrap input[type=range]{background:var(--primary-soft);accent-color:var(--primary)}
 .sliderWrap input[type=range]::-webkit-slider-thumb{background:var(--primary);border-color:var(--primary-hover);box-shadow:none}
@@ -478,9 +478,69 @@ h1{font-family:inherit;font-weight:700;line-height:1.12}
 #fuelBar{background:var(--primary)}#hpBar{background:var(--good)}
 .meter.low i{background:var(--danger)!important}
 .hint kbd{background:var(--panel);color:var(--text);border-color:var(--edge)}
-#netLobby,#netCover{background:rgb(244 247 250 / 98%)}
+#netLobby,#netCover{background:rgb(10 11 14 / 97%)}
 #toast{background:var(--panel);border-color:var(--edge);box-shadow:var(--shadow)}
 button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--primary);outline-offset:3px}
+
+/* The mine and its controls share one dark frame. */
+:root{--gold-text:#E8C77B;--crystal:#38C8F4;--diamond:#A78BFA}
+body{background:radial-gradient(ellipse at 50% 40%,#1b1916 0%,var(--page) 72%);padding:16px 24px 24px;isolation:isolate}
+body:before{content:"";position:fixed;inset:0;background:url('./assets/mine-frame.svg') center/100% 100% no-repeat;opacity:.5;pointer-events:none;z-index:-1}
+#app{width:min(1360px,100%);gap:12px}
+.hud{background:linear-gradient(110deg,#1d1d1d,#111316);border:1px solid #80612f;border-radius:16px;padding:10px 16px;gap:0;min-height:60px;box-shadow:0 6px 24px #0005}
+.brand{color:var(--primary-hover);font-size:15px;letter-spacing:.045em;padding-right:18px}
+.brand span{font-size:12px;color:var(--muted);margin-top:1px}
+.stat{border-left:1px solid var(--edge);padding:4px 14px;gap:7px;letter-spacing:0;font-size:11px}
+.stat b{font-family:inherit;font-size:14px;white-space:nowrap}
+.hud-icon{width:21px;height:23px;color:var(--primary-hover);flex:none}
+.stat:nth-child(4) .hud-icon{color:var(--crystal)}
+.meter{width:85px;height:8px;background:#303032;box-shadow:inset 0 1px 3px #0008}
+#fuelBar{background:linear-gradient(90deg,var(--primary),var(--primary-hover))}#hpBar{background:var(--good)}
+#stage{border:1px solid #77766e;border-radius:16px;box-shadow:0 16px 48px #0007;background:#08090b}
+.mine-scenery{position:absolute;inset:0;background:url('./assets/mine-frame.svg') center/100% 100% no-repeat;mask-image:radial-gradient(ellipse 130px 92px at top right,transparent 98%,#000 100%);pointer-events:none;z-index:1}
+.screen{backdrop-filter:blur(3px)}
+.card{background:linear-gradient(145deg,#1d1e22,#15171a);border-color:var(--edge);box-shadow:0 20px 60px #0009}
+h1,.entry-intro h1{color:var(--gold-text)}
+.entry-intro{background:linear-gradient(145deg,#24211b,#141619);color:var(--text)}
+.entry-intro .sub,.entry-intro .rules{color:var(--muted)}
+.entry-intro .rules div,.expedition-label{border-color:var(--edge)}
+.entry-intro .rules b{color:var(--gold-text)}.entry-intro .rules b:before{color:var(--muted)}
+#playLocal + .qsource{margin:10px 0 14px}
+.btn,.btn:hover{color:#1b160e;background:linear-gradient(#e9b75e,#c99a4a);border-color:#d9af64;box-shadow:0 3px 12px #0004}
+.btn:hover{background:var(--primary-hover)}
+.btn.ghost{color:var(--gold-text);background:var(--primary-soft);border-color:#80612f}
+.btn.ghost:hover{background:#342b1d}
+.btn.danger{color:var(--text);background:#542725;border-color:var(--danger)}
+.btn.danger:hover{background:#70322d}
+.skinbtn.sel{border-color:var(--primary-hover);box-shadow:0 0 0 1px #c99a4a55,inset 0 0 18px #c99a4a0d;color:var(--gold-text)}
+.rules,.skin-desc,.qfact,.qspeak{color:var(--muted)}
+.qtag{color:var(--gold-text)}.qtag.hard{color:var(--diamond)}.qtag.hard i{background:var(--diamond)}
+.ans{background:#222326;color:var(--text);border-color:#414039}
+.ans:hover:not(:disabled){background:#30291e;border-color:var(--primary)}
+.qsource.warn{color:var(--gold-text)}
+#netBar{min-height:48px;padding:7px 10px 7px 18px;border:1px solid #555650;border-radius:16px;background:linear-gradient(110deg,#1b1e22,#141619)}
+#netStatus,#lobbyCode,#lobbyStatus{color:var(--gold-text)}
+#controls{min-height:92px;padding:0 8px}
+.hint{font-size:13px}.hint b{color:var(--text)}
+.hint:before{content:"i";display:inline-grid;place-items:center;width:16px;height:16px;border:1px solid var(--primary);border-radius:50%;color:var(--primary-hover);margin-right:10px;font-size:11px}
+.hint kbd{color:var(--gold-text);background:#28231b;border-color:#8a6934;margin:0 2px;padding:1px 5px}
+.dpad{grid-template-columns:repeat(3,48px);grid-template-rows:repeat(2,40px);gap:6px}
+.dpad button{border-color:#9b7739;background:linear-gradient(#30291e,#201e1a);color:var(--gold-text);border-radius:12px;box-shadow:inset 0 1px 0 #e8c77b15}
+.dpad button:active{background:#604721;box-shadow:inset 0 2px 8px #0008;transform:scale(.95)}
+@media(max-width:1200px){.stat{padding:4px 8px}.hud-icon{width:17px}.brand{font-size:13px}.meter{width:60px}}
+@media(max-width:760px){body{padding:6px}.hud{padding:8px;gap:6px}.brand{flex-basis:100%}.brand span{display:inline;margin-left:8px}.stat{padding:3px 7px;font-size:10px}.hud-icon{width:15px;height:18px}.stat b{font-size:12px}.meter{width:48px}#controls{min-height:40px}.hint{font-size:11px}.entry-intro h1{font-size:36px}.mine-scenery{opacity:.5}}
+@media(max-height:540px){body{padding:6px}.hud{min-height:0;padding:5px 8px}.brand{flex-basis:auto}.stat{padding:2px 5px}#controls{min-height:24px}.dpad{grid-template-rows:repeat(2,30px);grid-template-columns:repeat(3,36px)}#app{gap:6px}}
+.sota-arrival #endScreen .card{animation:sotaWelcome .8s ease-out}
+@keyframes sotaWelcome{from{box-shadow:0 0 65px #f4b94288;border-color:#f4b942}to{box-shadow:0 20px 60px #0009;border-color:var(--edge)}}
+@media(prefers-reduced-motion:reduce){.sota-arrival #endScreen .card{animation:none}}
+.factory-playing:before{background:none}
+.factory-world .mine-scenery{display:none}
+.factory-world{background:#151e27!important}
+@media(max-width:760px),(pointer:coarse){
+  .factory-playing .dpad{display:grid!important;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(2,42px)}
+  .factory-playing #controls{justify-content:space-between;min-height:90px}
+  .factory-playing .hint{flex:1;min-width:120px;text-align:left;margin:0;font-size:11px}
+}
 </style>
 </head>
 <body>
@@ -488,17 +548,18 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
 
   <div class="hud">
     <div class="brand">Шахта Знаний <span>· квиз-бродилка</span></div>
-    <div class="stat">Шахта <b id="mineVal">1/3</b></div>
-    <div class="stat">До СОТЫ <b id="distVal">0 км</b></div>
-    <div class="stat">Кристаллы <b id="oreVal">0/3</b></div>
-    <div class="stat">Очки <b id="scoreVal">0</b></div>
-    <div class="stat">Серия <b id="comboVal">×0</b></div>
-    <div class="stat">Свет <div class="meter" id="fuelMeter"><i id="fuelBar"></i></div></div>
-    <div class="stat">Силы <div class="meter" id="hpMeter"><i id="hpBar"></i></div></div>
+    <div class="stat"><svg class="hud-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21 16 5M3 4c7-3 13 0 18 5M12 4l6 7"/></svg>Шахта <b id="mineVal">1/3</b></div>
+    <div class="stat"><svg class="hud-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-9 8-14a8 8 0 0 0-16 0c0 5 8 14 8 14ZM12 6v4"/></svg>До СОТЫ <b id="distVal">0 км</b></div>
+    <div class="stat"><svg class="hud-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 18 8 16 20 10 23 5 16 6 7ZM12 2 10 23M6 7l12 1"/></svg>Кристаллы <b id="oreVal">0/3</b></div>
+    <div class="stat"><svg class="hud-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3 7 8 1-6 5 2 8-7-4-7 4 2-8-6-5 8-1Z"/></svg>Очки <b id="scoreVal">0</b></div>
+    <div class="stat"><svg class="hud-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2c1 8 7 8 6 15a7 7 0 0 1-14 0c-1-4 2-7 4-9-1 7 4 7 4-6Z"/></svg>Серия <b id="comboVal">×0</b></div>
+    <div class="stat"><svg class="hud-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6V3h8v3M5 7h14v15H5ZM9 10h6v8H9ZM3 22h18"/></svg>Свет <div class="meter" id="fuelMeter"><i id="fuelBar"></i></div></div>
+    <div class="stat"><svg class="hud-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m14 2-9 12h6l-1 8 9-13h-6Z"/></svg>Силы <div class="meter" id="hpMeter"><i id="hpBar"></i></div></div>
   </div>
 
   <div id="stage">
     <canvas id="game"></canvas>
+    <div class="mine-scenery" aria-hidden="true"></div>
 
     <div class="screen" id="startScreen">
       <div class="card">
@@ -599,6 +660,11 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
   </div>
 </div>
 
+<script src="./assets/snake-config.js"></script>
+<script src="./assets/snake-engine.js"></script>
+<script src="./assets/snake-client.js"></script>
+<script src="./assets/factory.js"></script>
+<script src="./assets/factory-render.js"></script>
 <script src="./public/network.js"></script>
 <script>
 (function(){
@@ -794,6 +860,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
   let autoPath = [], autoNext = 0, tapTarget = null;
   let pickups = [], hintUsed = false;
   let speech = null;
+  let snakeTerminal=null,snakeTerminalPrompted=false;
   let netActive = false, netReady = false, netRendering = false, netLevel = 0, netPeers = [];
   let netQuestionId = null, netQuestionAnswered = false, netSeq = 0, netMovePending = 0, netSubmitting = false;
   let best = 0;
@@ -1036,6 +1103,9 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
       });
     }
 
+    SotaFactory.arrange({map,crystals,pickups,start,exitCell},depth);
+    snakeTerminal=SnakeEngine.terminal({map,crystals,pickups,start,exitCell});
+    factoryCompleted.clear();
     particles = [];
     updateHUD();
   }
@@ -1095,6 +1165,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
       ? 'СЛОЖНЫЙ ВОПРОС · АЛМАЗ'
       : (q.type === 'tf' ? 'ВЕРНО ИЛИ НЕТ' : 'ВОПРОС');
     el('qTag').parentElement.classList.toggle('hard', hard);
+    if (crystal && crystal.kind) el('qTag').textContent = SotaFactory.labels[crystal.kind] + (hard ? ' · СЛОЖНОЕ ИСПЫТАНИЕ' : '');
 
     // индикатор прогресса по кристаллам шахты
     const prog = el('qProg');
@@ -1471,6 +1542,11 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
 
   function tapTo(cell){
     if (state !== 'playing') return;
+    const station = crystals.find(c => c.kind && c.machine.x === cell.x && c.machine.y === cell.y);
+    if (station) {
+      if (station.done) { toast(SotaFactory.labels[station.kind] + ': выполнено'); return; }
+      cell = {x:station.x,y:station.y};
+    }
     const path = planPath(cell.x, cell.y);
     if (!path || path.length === 0){
       if (path === null){
@@ -1502,6 +1578,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
   canvas.addEventListener('contextmenu', e => e.preventDefault());
 
   function tryMove(dx, dy){
+    if(SnakeUI.blocked)return;
     if (netActive && (!netReady || netMovePending)) return;
     if (state !== 'playing') return;
     if (dx !== 0) player.dir = dx > 0 ? 1 : -1;
@@ -1520,6 +1597,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
   }
 
   function onEnterTile(){
+    if(snakeTerminal&&player.gx===snakeTerminal.x&&player.gy===snakeTerminal.y){SnakeUI.open();return;}
     const pk = pickups.find(p => p.x === player.gx && p.y === player.gy);
     if (pk){ takePickup(pk); return; }
 
@@ -1540,7 +1618,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
     pickups = pickups.filter(p => p !== pk);
     if (pk.type === 'oil'){
       fuel = Math.min(100, fuel + 20);
-      toast('Фляга масла: +20 света');
+      toast(factoryView ? 'Электрощит: +20 света' : 'Фляга масла: +20 света');
       flash = 0.25; flashColor = '255,200,120';
     } else {
       hp = Math.min(100, hp + 18);
@@ -1573,6 +1651,10 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
   function victory(){
     state = 'dead';
     stopAuto();
+    const arrival = performance.now();
+    sotaArrivalStarted = arrival;
+    el('stage').classList.add('sota-arrival');
+    toast('Ты добрался до СОТЫ!');
     const bonus = Math.round(startKm * 15);
     if (!netActive) score += bonus;
     if (score > best){
@@ -1587,7 +1669,14 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
     el('endBest').textContent = best;
     el('sotaWrap').classList.remove('hidden');
     drawSotaBuilding();
-    el('endScreen').classList.remove('hidden');
+    // Gameplay and network victory are already complete; only the local reveal waits.
+    if (netActive || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      el('endScreen').classList.remove('hidden');
+    } else {
+      setTimeout(() => {
+        if (state === 'dead' && sotaArrivalStarted === arrival) el('endScreen').classList.remove('hidden');
+      }, 650);
+    }
   }
 
   function gameOver(reason){
@@ -1670,6 +1759,8 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
   }
 
   const connection = new window.SotaConnection(message => {
+    if(message.type.startsWith('snake_')){if(netActive)SnakeUI.message(message);return;}
+    if(message.type==='state'&&netActive){SnakeUI.identity(message.me.id);snakeTerminal=message.world.snakeTerminal;}
     if (message.type === 'error') { netSubmitting = false; toast(message.message); return; }
     if (message.type !== 'state' || !netActive) return;
     const me = message.me, world = message.world;
@@ -1735,6 +1826,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
     score = me.score; fuel = me.fuel; hp = me.hp; answerStreak = me.streak;
     if (pending?.answered) el('qNextBtn').textContent = pending.result.ok ? (collected >= needed ? 'К лестнице' : 'Дальше') : 'Попробовать снова';
     updateHUD();
+    if(snakeTerminal&&me.state==='playing'){const at=me.x===snakeTerminal.x&&me.y===snakeTerminal.y;if(at&&!snakeTerminalPrompted&&!me.snake){snakeTerminalPrompted=true;SnakeUI.open()}if(!at)snakeTerminalPrompted=false;}
     if ((me.state === 'dead' || me.state === 'won') && state !== 'dead') {
       el('qScreen').classList.add('hidden');
       if (me.state === 'won') victory(); else gameOver(me.reason);
@@ -1750,6 +1842,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
       el('netError').textContent = text || 'Не удалось подключиться';
     }
   });
+  SnakeUI.configure({send:m=>m.type==='snake_input'&&connection.socket?.bufferedAmount?false:connection.send(m),network:()=>netActive,available:()=>state==='playing',stop:stopAuto,reward:n=>{score+=n;updateHUD()}});
   function netSend(type, fields = {}) {
     if (!netActive || !netReady) return false;
     return connection.send({ type, level: netLevel, ...fields });
@@ -1763,6 +1856,10 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
     el('netError').textContent = ''; connection.start(message);
   }
   function leaveNetwork() {
+    SnakeUI.reset();
+    factoryCompleted.clear();
+    sotaArrivalStarted = 0;
+    el('stage').classList.remove('sota-arrival');
     connection.stop(); netActive = false; netReady = false; netPeers = []; netLevel = 0; netMovePending = 0;
     el('netCover').hidden = true; el('netLobby').hidden = true; el('netBar').hidden = true; stopAuto();
   }
@@ -1829,29 +1926,57 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
   }
 
   function drawFloor(x, y, b){
+    if(factoryView){FactoryArt.floor(ctx,x,y,b);return;}
     const px = x * TILE, py = y * TILE;
     const h = hash(x, y);
     ctx.globalAlpha = b;
-    ctx.fillStyle = h > 0.5 ? '#2a2219' : '#251e16';
+    ctx.fillStyle = h > 0.5 ? '#443322' : '#392b20';
     ctx.fillRect(px, py, TILE, TILE);
+    // Deterministic facets keep the same tile geometry and never use gameplay RNG.
+    ctx.strokeStyle = 'rgba(11,9,7,.5)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(px + .5, py + .5, TILE - 1, TILE - 1);
+    ctx.fillStyle = 'rgba(205,157,90,.065)';
+    ctx.beginPath();
+    ctx.moveTo(px + 2, py + 3); ctx.lineTo(px + TILE - 5, py + 2);
+    ctx.lineTo(px + TILE - 9, py + 12); ctx.lineTo(px + 9, py + 20);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(15,12,9,.38)';
+    ctx.beginPath();
+    ctx.moveTo(px + 8 + h * 12, py + 4);
+    ctx.lineTo(px + 14 + h * 8, py + 15);
+    ctx.lineTo(px + 9 + h * 7, py + 22); ctx.stroke();
     // мелкая щебёнка
     ctx.fillStyle = 'rgba(255,255,255,0.035)';
     for (let i = 0; i < 3; i++){
       const r1 = hash(x * 31 + i, y * 17 + i);
       const r2 = hash(x * 13 + i, y * 29 + i);
       const s = 2 + r2 * 3;
-      ctx.fillRect(px + 5 + r1 * (TILE - 14), py + 6 + r2 * (TILE - 14), s, s);
+      const rx = px + 5 + r1 * (TILE - 14), ry = py + 6 + r2 * (TILE - 14);
+      ctx.fillStyle = 'rgba(4,3,2,.32)';
+      ctx.beginPath(); ctx.ellipse(rx + 1, ry + 2, s, s * .65, r1, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = r1 > .5 ? '#6b5134' : '#514332';
+      ctx.beginPath(); ctx.moveTo(rx - s, ry); ctx.lineTo(rx, ry - s);
+      ctx.lineTo(rx + s, ry - 1); ctx.lineTo(rx + s * .5, ry + s * .6); ctx.closePath(); ctx.fill();
     }
     ctx.fillStyle = 'rgba(0,0,0,0.18)';
     ctx.fillRect(px, py + TILE - 3, TILE, 3);
   }
 
   function drawWall(x, y, b){
+    if(factoryView){FactoryArt.wall(ctx,x,y,b,map);return;}
     const px = x * TILE, py = y * TILE;
     const h = hash(x, y);
     ctx.globalAlpha = b;
-    ctx.fillStyle = h > 0.66 ? '#191410' : (h > 0.33 ? '#15110d' : '#120f0c');
+    ctx.fillStyle = h > 0.66 ? '#282725' : (h > 0.33 ? '#24201c' : '#1b1d20');
     ctx.fillRect(px, py, TILE, TILE);
+    ctx.fillStyle = 'rgba(163,138,103,.1)';
+    ctx.beginPath(); ctx.moveTo(px + 3, py + 12); ctx.lineTo(px + 14, py + 3);
+    ctx.lineTo(px + 32, py + 6); ctx.lineTo(px + 40, py + 22);
+    ctx.lineTo(px + 26, py + 29); ctx.lineTo(px + 9, py + 25); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(px + 2, py + 31); ctx.lineTo(px + 17, py + 25);
+    ctx.lineTo(px + 25, py + 36); ctx.lineTo(px + 40, py + 30); ctx.stroke();
     // верхняя кромка камня, если клетка выше — пол
     if (y > 0 && map[y - 1][x] === FLOOR){
       ctx.fillStyle = 'rgba(120,96,66,0.30)';
@@ -1913,11 +2038,11 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
       cg.addColorStop(1, '#4a3d31');
     } else if (violet){
       cg.addColorStop(0, '#f4e9ff');
-      cg.addColorStop(0.45, '#b98bff');
+      cg.addColorStop(0.45, '#A78BFA');
       cg.addColorStop(1, '#5a34a8');
     } else {
       cg.addColorStop(0, '#d9fbff');
-      cg.addColorStop(0.45, '#63d8f0');
+      cg.addColorStop(0.45, '#38C8F4');
       cg.addColorStop(1, '#2a7ea0');
     }
     ctx.fillStyle = cg;
@@ -1952,6 +2077,12 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
   }
 
   function drawPickup(pk, now){
+    if(factoryView && pk.type==='oil'){
+      ctx.save();ctx.globalAlpha=.85;ctx.imageSmoothingEnabled=false;
+      ctx.drawImage(FactoryArt.sprite('power'),pk.x*TILE,pk.y*TILE-6,TILE,TILE);
+      ctx.fillStyle='#e8c77b';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillText('⚡',(pk.x+.5)*TILE,pk.y*TILE+39);
+      ctx.restore();return;
+    }
     const b = bright[pk.y][pk.x];
     if (b < 0.05) return;
     const px = pk.x * TILE + TILE / 2;
@@ -1997,7 +2128,76 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
     ctx.restore();
   }
 
+  const sotaBuilding = new Image();
+  sotaBuilding.src = './assets/sota-building.png';
+  let sotaArrivalStarted = 0;
+  let factoryView = false;
+  const factoryCompleted = new Map();
+  const originalBrand = document.querySelector('.brand').innerHTML;
+  const mineLabel = Array.from(el('mineVal').parentNode.childNodes).find(n => n.nodeType === 3 && n.textContent.trim());
+  const originalMineLabel = mineLabel.textContent;
+  function updateFactoryView(){
+    const active = state === 'playing' || state === 'question' ||
+      (state === 'dead' && sotaArrivalStarted > 0 && el('endScreen').classList.contains('hidden'));
+    if (active === factoryView) return;
+    factoryView = active;
+    document.body.classList.toggle('factory-playing',active);
+    el('stage').classList.toggle('factory-world',active);
+    document.querySelector('.brand').innerHTML = active ? 'Путь к СОТЕ <span>Завод «Кристалл»</span>' : originalBrand;
+    mineLabel.textContent = active ? 'Цех ' : originalMineLabel;
+  }
+
+  function drawFactoryStation(c,now){
+    const key = depth + ':' + c.x + ':' + c.y;
+    if(c.done && state === 'playing' && !factoryCompleted.has(key)) factoryCompleted.set(key,now);
+    FactoryArt.object(ctx,c,now,bright[c.y][c.x],factoryCompleted.get(key),[...crystals,...pickups,exitCell]);
+  }
+
+  function isFinalMine(){ return depth >= totalMines; }
+
+  function sotaFootprint(){
+    const width = TILE * 5.8, height = width * 928 / 1356;
+    const entranceX = (exitCell.x + .5) * TILE;
+    const entranceY = (exitCell.y + .75) * TILE;
+    return { x: entranceX - width * .535, y: entranceY - height * .99,
+      width, height, entranceX, entranceY };
+  }
+
+  function drawSotaExit(now){
+    const { x, y, width, height, entranceX, entranceY } = sotaFootprint();
+    const arrival = sotaArrivalStarted ? Math.max(0, 1 - (now - sotaArrivalStarted) / 800) : 0;
+    ctx.save();
+    ctx.globalAlpha = 1;
+    const glow = ctx.createRadialGradient(entranceX, entranceY - height * .25, 10,
+      entranceX, entranceY - height * .25, width * .8);
+    glow.addColorStop(0, 'rgba(244,185,66,' + (.14 + arrival * .25) + ')');
+    glow.addColorStop(1, 'rgba(244,185,66,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(x - width * .5, y - height * .5, width * 2, height * 2);
+    // A readable destination beacon, independent of the explored-tile data.
+    ctx.globalAlpha = Math.max(.55, bright[exitCell.y][exitCell.x]);
+    if (sotaBuilding.complete && sotaBuilding.naturalWidth) {
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(sotaBuilding, 46, 110, 1356, 928, x, y, width, height);
+    } else {
+      ctx.fillStyle = '#d9d2c4'; ctx.fillRect(entranceX - 18, entranceY - 55, 36, 55);
+      ctx.fillStyle = '#73532c'; ctx.fillRect(entranceX - 9, entranceY - 30, 18, 30);
+    }
+    const light = ctx.createRadialGradient(entranceX, entranceY - 12, 2, entranceX, entranceY - 12, TILE * (1.1 + arrival));
+    light.addColorStop(0, 'rgba(255,208,116,' + ((exitOpen ? .35 : .16) + arrival * .5) + ')');
+    light.addColorStop(1, 'rgba(255,208,116,0)');
+    ctx.globalAlpha = 1; ctx.fillStyle = light;
+    ctx.fillRect(entranceX - TILE * 2.2, entranceY - TILE * 2.5, TILE * 4.4, TILE * 4.4);
+    ctx.restore();
+  }
+
   function drawExit(now){
+    if (isFinalMine()) { drawSotaExit(now); return; }
+    if (factoryView) {
+      ctx.save();ctx.globalAlpha=1;ctx.imageSmoothingEnabled=false;
+      FactoryArt.door(ctx,exitCell,exitOpen,map,[...crystals,...pickups]);
+      ctx.restore();return;
+    }
     const b = Math.max(bright[exitCell.y][exitCell.x], 0.12);
     const px = exitCell.x * TILE, py = exitCell.y * TILE;
     ctx.save();
@@ -2457,18 +2657,26 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
   }
 
   function draw(now){
+    updateFactoryView();
     // камера: показываем максимум карты, но не мельче MIN_TILE_PX
-    const fit = Math.min(cssW / VW, cssH / VH);
+    // Extend visual framing only: a facade above an edge exit must not be cropped.
+    const building = isFinalMine() ? sotaFootprint() : null;
+    const left = building ? Math.min(0, building.x - TILE) : 0;
+    const top = building ? Math.min(0, building.y - TILE) : 0;
+    const right = building ? Math.max(VW, building.x + building.width + TILE) : VW;
+    const bottom = building ? Math.max(VH, building.y + building.height + TILE) : VH;
+    const fit = Math.min(cssW / (right - left), cssH / (bottom - top));
     zoom = Math.max(fit, MIN_TILE_PX / TILE);
     const viewW = cssW / zoom, viewH = cssH / zoom;
-    const tCamX = viewW >= VW ? (VW - viewW) / 2 : clamp(player.x - viewW / 2, 0, VW - viewW);
-    const tCamY = viewH >= VH ? (VH - viewH) / 2 : clamp(player.y - viewH / 2, 0, VH - viewH);
+    const tCamX = viewW >= right - left ? (left + right - viewW) / 2 : clamp(player.x - viewW / 2, left, right - viewW);
+    const tCamY = viewH >= bottom - top ? (top + bottom - viewH) / 2 : clamp(player.y - viewH / 2, top, bottom - viewH);
     camX += (tCamX - camX) * 0.22;
     camY += (tCamY - camY) * 0.22;
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = '#070605';
     ctx.fillRect(0, 0, cssW, cssH);
+    if(factoryView) FactoryArt.frame(ctx,cssW,cssH,now);
 
     let sx = 0, sy = 0;
     if (shake > 0){
@@ -2495,9 +2703,23 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
     }
     ctx.globalAlpha = 1;
 
+    if(factoryView){
+      FactoryArt.details(ctx,map,crystals,pickups,null,exitCell,bright);
+      ctx.save();ctx.imageSmoothingEnabled=false;ctx.globalAlpha=.65;
+      for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+        if(map[y][x]===WALL && hash(x+depth*7,y)>.91 &&
+          !crystals.some(c=>c.machine && c.machine.x===x && c.machine.y===y))
+          ctx.drawImage(FactoryArt.sprite('container'),x*TILE,y*TILE,TILE,TILE);
+      }
+      ctx.restore();
+    }
     drawTarget(now);
     drawExit(now);
-    for (const c of crystals) if (!c.done) drawCrystal(c, now);
+    for (const c of crystals) {
+      if(factoryView && c.kind) drawFactoryStation(c,now);
+      else if (!c.done) drawCrystal(c, now);
+    }
+    if(factoryView)SnakeUI.terminal(ctx,snakeTerminal);
     for (const pk of pickups) drawPickup(pk, now);
     drawNetworkPlayers(now);
     drawMiner(now);
@@ -2508,8 +2730,8 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
     ctx.globalCompositeOperation = 'lighter';
     const flicker = 1 + Math.sin(now * 0.012) * 0.05;
     const lg = ctx.createRadialGradient(player.x, player.y, 2, player.x, player.y, 120 * flicker);
-    lg.addColorStop(0, 'rgba(255,196,110,0.16)');
-    lg.addColorStop(0.55, 'rgba(255,160,70,0.045)');
+    lg.addColorStop(0, 'rgba(255,190,83,0.27)');
+    lg.addColorStop(0.55, 'rgba(255,160,70,0.085)');
     lg.addColorStop(1, 'rgba(255,150,60,0)');
     ctx.fillStyle = lg;
     ctx.beginPath();
@@ -2522,7 +2744,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
     const vg = ctx.createRadialGradient(cssW / 2, cssH / 2, Math.min(cssW, cssH) * 0.3,
                                         cssW / 2, cssH / 2, Math.max(cssW, cssH) * 0.78);
     vg.addColorStop(0, 'rgba(0,0,0,0)');
-    vg.addColorStop(1, 'rgba(0,0,0,0.72)');
+    vg.addColorStop(1, factoryView ? 'rgba(0,0,0,0.34)' : 'rgba(0,0,0,0.72)');
     ctx.fillStyle = vg;
     ctx.fillRect(0, 0, cssW, cssH);
 
@@ -2533,6 +2755,12 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
 
     drawSpeech(now);
     drawMinimap(now);
+    if(factoryView){
+      const sections=['Подготовка и распиловка','Огранка и полировка','Контроль качества и сортировка','Моделирование и технологии'];
+      ctx.save();ctx.fillStyle='#111b24ee';ctx.fillRect(20,16,Math.min(cssW-160,390),34);
+      ctx.fillStyle='#e8c77b';ctx.font='600 12px system-ui';ctx.textAlign='left';
+      ctx.fillText('КРИСТАЛЛ · '+sections[(depth-1)%sections.length],30,38,Math.max(70,cssW-185));ctx.restore();
+    }
   }
 
   function drawMinimap(now){
@@ -2544,10 +2772,10 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
 
     ctx.save();
     ctx.fillStyle = 'rgba(8,7,6,.68)';
-    ctx.strokeStyle = 'rgba(242,164,65,.22)';
+    ctx.strokeStyle = 'rgba(201,154,74,.65)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.roundRect(x0 - 5, y0 - 5, mw + 10, mh + 10, 7);
+    ctx.roundRect(x0 - 5, y0 - 5, mw + 10, mh + 10, 10);
     ctx.fill();
     ctx.stroke();
 
@@ -2607,7 +2835,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
     player.x += (tx - player.x) * k;
     player.y += (ty - player.y) * k;
 
-    if (state === 'playing' && !netActive){
+    if (state === 'playing' && !netActive && !SnakeUI.blocked){
       fuel = Math.max(0, fuel - dt * 1.05);
       if (fuel <= 0){ updateHUD(); gameOver('Фонарь погас, и шахта сомкнулась.'); }
       updateHUD();
@@ -2616,7 +2844,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
     shake = Math.max(0, shake - dt * 3);
     flash = Math.max(0, flash - dt * 1.6);
 
-    draw(now);
+    if(!SnakeUI.blocked) draw(now);
     requestAnimationFrame(loop);
   }
 

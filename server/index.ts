@@ -6,6 +6,7 @@ import { WebSocket, WebSocketServer } from 'ws';
 import QRCode from 'qrcode';
 import { Game, Identity } from './game';
 import { GameError, messageSchema, RateLimit } from './protocol';
+import { SnakeService } from './snake';
 import { CITIES } from './cities';
 
 export function createApp(root = path.resolve(__dirname, '../..')) {
@@ -15,15 +16,17 @@ export function createApp(root = path.resolve(__dirname, '../..')) {
   let publicUrl = '', tunnelStatus = 'Туннель не запущен', shuttingDown = false;
   const peers = new Map<WebSocket, { identity?: Identity; alive: boolean }>();
   const owners = new Map<string, WebSocket>();
-  const send = (ws: WebSocket, data: unknown) => {
+  const send = (ws: WebSocket, data: any) => {
     if (ws.readyState !== WebSocket.OPEN) return;
+    if(data?.type==='snake_state'&&ws.bufferedAmount>require('../../assets/snake-config.js').maxBufferedBytes)return;
     if (ws.bufferedAmount > 512 * 1024) { ws.terminate(); return; }
     ws.send(JSON.stringify(data));
   };
+  const snake=new SnakeService(game,(room,message,playerId)=>{for(const [ws,p] of peers)if(p.identity?.room===room&&(!playerId||p.identity.player.id===playerId))send(ws,message)});
   const broadcast = () => {
     for (const [ws, peer] of peers) if (peer.identity) {
       if (!game.rooms.has(peer.identity.room.code)) { send(ws, { type: 'ended', message: 'Организатор завершил сессию' }); ws.close(1000); }
-      else send(ws, game.snapshot(peer.identity));
+      else if(!peer.identity.player.snake) send(ws, game.snapshot(peer.identity));
     }
   };
   const json = (res: ServerResponse, status: number, data: unknown) => {
@@ -57,7 +60,7 @@ export function createApp(root = path.resolve(__dirname, '../..')) {
           res.writeHead(200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'no-store' });
           res.end(await QRCode.toString(publicUrl, { type: 'svg', errorCorrectionLevel: 'M', margin: 2 })); return;
         }
-        if (['/api/admin/create', '/api/admin/start', '/api/admin/end'].includes(pathname) && req.method === 'POST') {
+        if (['/api/admin/create', '/api/admin/start', '/api/admin/end', '/api/admin/snake'].includes(pathname) && req.method === 'POST') {
           let body = ''; for await (const chunk of req) { body += chunk; if (body.length > 2048) { json(res, 413, { error: 'Запрос слишком большой' }); return; } }
           let input; try { input = JSON.parse(body); if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error(); } catch { json(res, 400, { error: 'Некорректный запрос' }); return; }
           if (pathname === '/api/admin/create') {
@@ -66,6 +69,7 @@ export function createApp(root = path.resolve(__dirname, '../..')) {
           }
           const code: unknown = input.code;
           if (code !== '*' && (typeof code !== 'string' || !/^[A-Z2-9]{5}$/.test(code))) { json(res, 400, { error: 'Некорректный код' }); return; }
+          if(pathname==='/api/admin/snake'){const room=game.rooms.get(code as string);if(!room)throw new GameError('Комната не найдена');snake.invite(room,true);broadcast();json(res,200,{ok:true});return;}
           if (pathname === '/api/admin/start') {
             if (code === '*') { json(res, 400, { error: 'Выберите одну комнату' }); return; }
             game.start(code as string);
@@ -125,9 +129,11 @@ export function createApp(root = path.resolve(__dirname, '../..')) {
           peer.identity = m.type === 'join' ? game.join(m.code, m.skin) : game.resume(m.token);
           const old = owners.get(peer.identity.player.id); owners.set(peer.identity.player.id, ws); old?.close(1000, 'Восстановлено другое соединение');
           clearTimeout(timeout); send(ws, { type: 'welcome', token: peer.identity.player.token, code: peer.identity.room.code });
+          send(ws,game.snapshot(peer.identity));snake.sync(peer.identity,m=>send(ws,m));
         } else {
           if (!peer.identity) throw new GameError('Сначала подключитесь к комнате');
           if (m.type === 'leave') { game.leave(peer.identity); owners.delete(peer.identity.player.id); delete peer.identity; send(ws, { type: 'left' }); }
+          else if(m.type.startsWith('snake_')){snake.action(peer.identity,m);if(m.type==='snake_input')return;}
           else { if (m.type === 'move') peer.identity.player.ack = m.seq; game.action(peer.identity, m); }
         }
         broadcast();
@@ -142,18 +148,29 @@ export function createApp(root = path.resolve(__dirname, '../..')) {
       if (peer.identity && owners.get(peer.identity.player.id) === ws) { owners.delete(peer.identity.player.id); game.disconnect(peer.identity); broadcast(); }
     });
   });
+  // Schedule against a monotonic deadline: setInterval drifts on coarse Windows timers.
+  const snakeStep=require('../../assets/snake-config.js').tickMs;
+  let snakeDeadline=performance.now()+snakeStep;
+  let snakeTick: ReturnType<typeof setTimeout>;
+  const runSnakeTick=()=>{
+    if(shuttingDown)return;
+    snake.tick();snakeDeadline+=snakeStep;
+    if(performance.now()-snakeDeadline>snakeStep*4)snakeDeadline=performance.now()+snakeStep;
+    snakeTick=setTimeout(runSnakeTick,Math.max(1,snakeDeadline-performance.now()));
+  };
+  snakeTick=setTimeout(runSnakeTick,snakeStep);
   const tick = setInterval(() => { game.tick(); broadcast(); }, 200);
   const heartbeat = setInterval(() => { for (const [ws, p] of peers) { if (!p.alive) ws.terminate(); else { p.alive = false; ws.ping(); } } }, 15000);
   server.on('error', error => console.error('Ошибка сервера:', (error as NodeJS.ErrnoException).code || error.name));
   wss.on('error', error => console.error('Ошибка WebSocket-сервера:', error.name));
-  return { server, game, adminToken, healthId,
+  return { server, game, snake, adminToken, healthId,
     setTunnel(url: string, status: string) {
       publicUrl = '';
       try { const parsed = new URL(url); if (parsed.protocol === 'https:' && !parsed.username && !parsed.password) publicUrl = parsed.origin; } catch { /* Туннель ещё не получил адрес. */ }
       tunnelStatus = status.slice(0, 200);
     },
     async close() {
-      shuttingDown = true; clearInterval(tick); clearInterval(heartbeat);
+      shuttingDown = true; clearInterval(tick); clearTimeout(snakeTick); clearInterval(heartbeat);snake.rounds.clear();
       for (const ws of peers.keys()) { send(ws, { type: 'ended', message: 'Сервер остановлен организатором' }); ws.terminate(); }
       await new Promise<void>(resolve => wss.close(() => resolve()));
       await new Promise<void>(resolve => { server.close(() => resolve()); server.closeAllConnections(); });
